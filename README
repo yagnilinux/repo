@@ -1,0 +1,3 @@
+source for every package in yagni 0.1, as the gpl asks.
+
+the kernel is split in parts: cat linux-7.3.3-6.tar.gz.* > linux-7.3.3-6.tar.gz
