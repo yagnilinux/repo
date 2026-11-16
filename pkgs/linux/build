@@ -1,0 +1,10 @@
+#!/bin/sh -e
+# one kernel, efistub
+cp "$PKG/config" .config
+make -s olddefconfig
+make -j"$(nproc)" bzImage modules >/dev/null
+make -s INSTALL_MOD_PATH="$1" INSTALL_MOD_STRIP=1 modules_install >/dev/null
+rm -f "$1"/lib/modules/*/build "$1"/lib/modules/*/source
+
+# /boot is the esp
+install -Dm644 arch/x86/boot/bzImage "$1/boot/EFI/BOOT/BOOTX64.EFI"

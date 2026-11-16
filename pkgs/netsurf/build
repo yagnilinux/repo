@@ -1,0 +1,37 @@
+#!/bin/sh -e
+# static framebuffer netsurf
+# wayland surface, needs curl
+"$ROOT/pkgs/luwm/wlibs"
+P=$ROOT/src/wlprefix J=$ROOT/src/links-libs C=$ROOT/src/curl-libs L=$ROOT/src/netsurf-libs W=$PWD
+[ -f "$J/.done" ] && [ -f "$ROOT/src/curl/lib/.libs/libcurl.a" ] || { echo "netsurf: build links and curl first" >&2; exit 1; }
+export CC=musl-gcc PKG_CONFIG="pkg-config --static" PKG_CONFIG_PATH=
+export PKG_CONFIG_LIBDIR="$L/lib/pkgconfig:$J/lib/pkgconfig:$P/lib/pkgconfig:$P/share/pkgconfig"
+if [ ! -f "$L/.done" ]; then
+    mkdir -p "$L/lib/pkgconfig"
+    # reuse curl's libs
+    cd "$ROOT/src/curl"
+    make -s -C lib install prefix="$L" >/dev/null; make -s -C include install prefix="$L" >/dev/null
+    make -s install-pkgconfigDATA prefix="$L" >/dev/null
+    sed -i "s|^prefix=.*|prefix=$L|" "$L/lib/pkgconfig/libcurl.pc"
+    cp "$C/lib/libbearssl.a" "$L/lib/"
+    touch "$L/.done"
+fi
+cd "$W"
+# keys, wheel, resize
+grep -q rkey libnsfb/src/surface/wld.c || patch -sp1 < "$PKG/files/wld.patch"
+# one cursor, luwm's
+grep -q "keep luwm" libnsfb/src/surface/wld.c || patch -sp1 < "$PKG/files/cursor.patch"
+rm -rf libnsfb/build-* netsurf/nsfb netsurf/build/*/deps/link*.d inst-framebuffer/build-stamp
+CFLAGS="-Os -I$J/include -I$P/include -I$P/include/freetype2 -I$P/kh" LDFLAGS="-static -s -L$L/lib -L$J/lib -L$P/lib" \
+make TARGET=framebuffer HOST_CC=gcc BUILD_CC=gcc PREFIX=/usr NETSURF_USE_OPENSSL=NO NETSURF_USE_SDL=NO \
+    NETSURF_USE_VNC=NO NETSURF_USE_ROSPRITE=NO NETSURF_USE_RSVG=NO NETSURF_USE_WEBP=NO \
+    NETSURF_USE_JPEGXL=NO NETSURF_USE_NSSVG=NO NETSURF_FB_FONTLIB=freetype \
+    NETSURF_FB_FONTPATH=/usr/share/fonts/dejavu NETSURF_FB_RESPATH=/usr/share/netsurf/ >/dev/null 2>&1
+install -Dm755 netsurf/nsfb "$1/usr/bin/nsfb"
+mkdir -p "$1/usr/share/netsurf"
+cp -rL netsurf/frontends/framebuffer/res/. "$1/usr/share/netsurf/"
+rm -rf "$1/usr/share/netsurf/de" "$1/usr/share/netsurf/fr" "$1/usr/share/netsurf/it" \
+       "$1/usr/share/netsurf/ja" "$1/usr/share/netsurf/nl" "$1/usr/share/netsurf/fonts"
+# wm sets size
+printf '#!/bin/sh\nexec nsfb -f wld -w "${NSW:-800}" -h "${NSH:-600}" "$@"\n' > "$1/usr/bin/netsurf"
+chmod 755 "$1/usr/bin/netsurf"

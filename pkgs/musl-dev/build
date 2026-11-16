@@ -1,0 +1,10 @@
+#!/bin/sh -e
+# libc.a, crt, headers
+# programs link statically.
+./configure --prefix=/usr --syslibdir=/lib >/dev/null
+make -s -j"$(nproc)" >/dev/null
+make -s DESTDIR="$1" install >/dev/null
+rm -rf "$1/lib" "$1/usr/bin" "$1/usr/lib/libc.so" "$1/usr/lib/musl-gcc.specs"
+make -s -C "$ROOT/src/linux" headers >/dev/null
+cp -r "$ROOT"/src/linux/usr/include/* "$1/usr/include/"
+find "$1/usr/include" ! -name '*.h' -type f -delete

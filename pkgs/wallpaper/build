@@ -1,0 +1,6 @@
+#!/bin/sh -e
+# edited cc0 photos
+# sources: files/SOURCES
+d=$1/usr/share/wallpapers
+for f in "$PKG"/files/*.png; do install -Dm644 "$f" "$d/${f##*/}"; done
+install -Dm644 "$PKG/files/SOURCES" "$d/SOURCES"

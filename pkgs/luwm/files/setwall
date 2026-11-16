@@ -1,0 +1,23 @@
+#!/bin/sh
+# set wallpaper
+# png, ppm or #rrggbb
+# no args: reapply saved
+s=${XDG_CONFIG_HOME:-$HOME/.config}/luwm/wall
+w=${XDG_RUNTIME_DIR:-/tmp/run-$(id -u)}/wall.ppm
+case $1 in
+'') [ -f "$s" ] || exit 0; set -- "$(cat "$s")" ;;
+'#'*) ;;
+*) [ -f "$1" ] || { echo "usage: setwall image.png|image.ppm|#rrggbb" >&2; exit 1; }
+   set -- "$(readlink -f "$1")" ;;
+esac
+mkdir -p "${s%/*}" "${w%/*}"
+case $1 in
+'#'??????) printf 'P6\n1 1\n255\n' > "$w.tmp"
+    for i in 1 3 5; do printf "\\$(printf %o "0x$(echo "${1#?}" | cut -c$i-$((i + 1)))")"; done >> "$w.tmp" ;;
+*.png) png -d < "$1" > "$w.tmp" ;;
+*) cp "$1" "$w.tmp" ;;
+esac || { rm -f "$w.tmp"; exit 1; }
+mv "$w.tmp" "$w"
+echo "$1" > "$s" # small, persists
+pkill -USR1 -x luwm 2>/dev/null
+:

@@ -1,0 +1,4 @@
+#!/bin/sh
+# pick, then run
+IFS=:
+for d in $PATH; do ls "$d"; done 2>/dev/null | sort -u | dmenu "$@" | ${SHELL:-/bin/sh} &

@@ -1,0 +1,4 @@
+#!/bin/sh -e
+mkdir -p "$1/usr/bin"
+printf '#!/bin/sh\nhello\necho "and hi, ${USER:-you}."\n' > "$1/usr/bin/greet"
+chmod 755 "$1/usr/bin/greet"

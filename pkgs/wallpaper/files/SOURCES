@@ -1,0 +1,16 @@
+wallpapers: edited cc0 photos
+source: github.com/cslr/cc0pictures (unsplash.com, CC0)
+edits: cropped to 1920x1080 (labels kept 150px in, for 16:10),
+gradient-mapped to one yagni blue ramp, dithered; some labelled
+(DejaVu, kirsch, IM Fell English; free fonts)
+
+building.png  photo-1461409971633-aa0e46732112  blue
+rock.png      photo-1432383079404-c66efb4828a3  blue
+tide.png      photo-1421749810611-438cc492b581  blue, IM Fell label
+stacks.png    photo-1449960238630-7e720e630019  pale blue
+fog.png       photo-1452716726610-30ed68426a6b  deep blue, kirsch label
+hall.png      photo-1453282716202-de94e528067c  cerulean, crushed
+block.png     photo-1460574283810-2aab119d8511  1-bit, sand slogan
+cabin.png     photo-1447877085163-3cce903855cd  slate
+dusk.png      photo-1451431487663-470c5380d27c  violet blue
+stipple.png   none: 2x2 checker, tiles

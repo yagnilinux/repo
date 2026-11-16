@@ -1,0 +1,5 @@
+#!/bin/sh
+# set volume, unmute
+[ "$1" ] || { echo "usage: vol percent" >&2; exit 1; }
+for c in Speaker Headphone PCM; do amixer -q set "$c" 100% unmute 2>/dev/null; done
+amixer -q set Master "$1%" unmute

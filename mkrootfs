@@ -1,0 +1,10 @@
+#!/bin/sh -e
+# the install tarball
+cd "${0%/*}"
+r=$(mktemp -d)
+JITS_REPO=file://$PWD/repo sh src/jits/jits -r "$r" a base >/dev/null
+rm -rf "$r/var/db/jits/cache" "$r/var/db/jits/stage"
+tar czf yagni.tar.gz --numeric-owner -C "$r" .
+sha256sum yagni.tar.gz > yagni.tar.gz.sha256
+rm -rf "$r"
+echo "-> yagni.tar.gz $(wc -c < yagni.tar.gz) bytes"

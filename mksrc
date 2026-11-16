@@ -1,0 +1,31 @@
+#!/bin/sh -e
+# collect gpl sources
+#   tagged tree
+#   upstream + patches
+#   linked-in libs
+cd "${0%/*}"
+ROOT=$PWD
+mkdir -p sources/libs
+cd sources
+for d in "$ROOT"/pkgs/*/; do
+    n=${d%/} n=${n##*/} v=$(cat "$d/version")
+    [ -f "$d/source" ] || continue
+    read -r kind a b < "$d/source"
+    case $kind in
+        git) [ -f "$n-$v.tar.gz" ] && continue
+             if [ -e "$ROOT/src/$n/.git" ]; then
+                 git -C "$ROOT/src/$n" archive --prefix="$n-$v/" -o "$PWD/$n-$v.tar.gz" HEAD
+             else
+                 tar czf "$n-$v.tar.gz" -h --exclude=.git -C "$ROOT/src" "$n"
+             fi ;;
+        apt-src) mkdir -p "$n"
+             [ "$(ls "$n")" ] || (cd "$n" && apt-get source -qq --download-only "$a" >/dev/null 2>&1) ;;
+    esac
+    echo "-> $n $v"
+done
+for f in "$ROOT"/src/*/src/*.tar.* "$ROOT"/src/*/src/*.dsc "$ROOT"/src/wlsrc/*.tar.* "$ROOT"/src/wlsrc/*.dsc; do
+    [ -f "$f" ] && [ ! -e "libs/${f##*/}" ] && cp "$f" libs/
+done
+o=$ROOT/src/python-libs/src/openssl
+[ -e "$o/.git" ] && [ ! -f libs/openssl-3.5.9.tar.gz ] && git -C "$o" archive --prefix=openssl-3.5.9/ -o "$PWD/libs/openssl-3.5.9.tar.gz" HEAD
+du -sh .

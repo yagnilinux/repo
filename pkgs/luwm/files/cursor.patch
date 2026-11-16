@@ -1,0 +1,182 @@
+diff -ru a/libswc/compositor.c b/libswc/compositor.c
+--- a/libswc/compositor.c	2026-11-13 23:05:10.231751619 +0200
++++ b/libswc/compositor.c	2026-11-14 14:31:08.530469672 +0200
+@@ -64,6 +64,7 @@
+ 
+ static bool handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t x, wl_fixed_t y);
+ static void perform_update(void *data);
++static void schedule_updates(uint32_t screens);
+ 
+ static struct pointer_handler pointer_handler = {
+ 	.motion = handle_motion,
+@@ -136,13 +137,47 @@
+ 	.frame = handle_screen_frame,
+ };
+ 
++/* software cursor */
++static void
++soft_cursor(struct target *target, struct wld_buffer *b, pixman_region32_t *damage)
++{
++	struct pointer *p = swc.seat->pointer;
++	struct wld_buffer *c = p->cursor.buffer;
++	const struct swc_rectangle *g = &p->cursor.view.geometry, *t = &target->view->geometry;
++	pixman_image_t *d, *s;
++
++	if (!b || !c || !p->cursor.view.buffer || !wld_map(b) || !wld_map(c))
++		return;
++	d = pixman_image_create_bits_no_clear(PIXMAN_x8r8g8b8, b->width, b->height, b->map, b->pitch);
++	s = pixman_image_create_bits_no_clear(PIXMAN_a8r8g8b8, c->width, c->height, c->map, c->pitch);
++	if (d && s) {
++		pixman_image_set_clip_region32(d, damage);
++		pixman_image_composite32(PIXMAN_OP_OVER, s, NULL, d, 0, 0, 0, 0, g->x - t->x, g->y - t->y, c->width, c->height);
++	}
++	if (d)
++		pixman_image_unref(d);
++	if (s)
++		pixman_image_unref(s);
++}
++
+ static int
+-target_swap_buffers(struct target *target)
++target_swap_buffers(struct target *target, struct screen *screen, pixman_region32_t *damage)
+ {
+ 	target->next_buffer = wld_surface_take(target->surface);
++	if (!screen->planes.cursor)
++		soft_cursor(target, target->next_buffer, damage);
+ 	return view_attach(target->view, target->next_buffer);
+ }
+ 
++/* damage cursor area */
++void
++compositor_damage_rect(int32_t x, int32_t y, uint32_t w, uint32_t h)
++{
++	pixman_region32_union_rect(&compositor.damage, &compositor.damage, x, y, w, h);
++	if (swc.active)
++		schedule_updates(-1);
++}
++
+ static struct target *
+ target_new(struct screen *screen)
+ {
+@@ -653,7 +688,9 @@
+ 		return;
+ 	}
+ 
+-	pixman_region32_t base_damage;
++	pixman_region32_t base_damage, cursor_damage;
++	pixman_region32_init(&cursor_damage);
++	pixman_region32_copy(&cursor_damage, total_damage);
+ 	pixman_region32_copy(&damage, total_damage);
+ 	pixman_region32_translate(&damage, geom->x, geom->y);
+ 	pixman_region32_init(&base_damage);
+@@ -662,7 +699,9 @@
+ 	pixman_region32_fini(&damage);
+ 	pixman_region32_fini(&base_damage);
+ 
+-	switch (target_swap_buffers(target)) {
++	int ret = target_swap_buffers(target, screen, &cursor_damage);
++	pixman_region32_fini(&cursor_damage);
++	switch (ret) {
+ 	case -EACCES:
+ 		/* If we get an EACCES, it is because this session is being deactivated, but
+ 		 * we haven't yet received the deactivate signal from swc-launch. */
+diff -ru a/libswc/compositor.h b/libswc/compositor.h
+--- a/libswc/compositor.h	2026-11-13 23:05:10.231751619 +0200
++++ b/libswc/compositor.h	2026-11-14 14:30:55.710592808 +0200
+@@ -89,5 +89,6 @@
+ 
+ void compositor_view_set_border_color(struct compositor_view *view, uint32_t color);
+ void compositor_view_set_border_width(struct compositor_view *view, uint32_t width);
++void compositor_damage_rect(int32_t x, int32_t y, uint32_t w, uint32_t h);
+ 
+ #endif
+diff -ru a/libswc/pointer.c b/libswc/pointer.c
+--- a/libswc/pointer.c	2026-11-14 14:30:43.617445288 +0200
++++ b/libswc/pointer.c	2026-11-14 14:32:26.540873049 +0200
+@@ -23,10 +23,12 @@
+ 
+ #include "pointer.h"
+ #include "compositor.h"
++#include "drm.h"
+ #include "event.h"
+ #include "internal.h"
+ #include "plane.h"
+ #include "screen.h"
++#include "seat.h"
+ #include "shm.h"
+ #include "surface.h"
+ #include "util.h"
+@@ -44,10 +46,9 @@
+ 	uint32_t serial;
+ 	wl_fixed_t surface_x, surface_y;
+ 
+-	if (wl_list_empty(resources)) {
+-		pointer_set_cursor(pointer, cursor_left_ptr);
++	pointer_set_cursor(pointer, cursor_left_ptr); /* clients may override */
++	if (wl_list_empty(resources))
+ 		return;
+-	}
+ 	serial = wl_display_next_serial(swc.display);
+ 	surface_x = pointer->x - wl_fixed_from_int(view->base.geometry.x);
+ 	surface_y = pointer->y - wl_fixed_from_int(view->base.geometry.y);
+@@ -75,6 +76,28 @@
+ 	pointer->cursor.surface = NULL;
+ }
+ 
++/* no plane: damage */
++static void
++soft_damage(struct view *view)
++{
++	struct screen *screen;
++
++	wl_list_for_each (screen, &swc.screens, link) {
++		if (!screen->planes.cursor) {
++			compositor_damage_rect(view->geometry.x, view->geometry.y, swc.drm->cursor_w, swc.drm->cursor_h);
++			return;
++		}
++	}
++}
++
++/* for wm hit-tests */
++EXPORT void
++swc_pointer_position(int32_t *x, int32_t *y)
++{
++	*x = wl_fixed_to_int(swc.seat->pointer->x);
++	*y = wl_fixed_to_int(swc.seat->pointer->y);
++}
++
+ static bool
+ update(struct view *view)
+ {
+@@ -105,6 +128,7 @@
+ 
+ 	/* TODO: Send an early release to the buffer */
+ 
++	soft_damage(view);
+ 	if (view_set_size_from_buffer(view, buffer))
+ 		view_update_screens(view);
+ 
+@@ -123,8 +147,10 @@
+ {
+ 	struct screen *screen;
+ 
++	soft_damage(view);
+ 	if (view_set_position(view, x, y))
+ 		view_update_screens(view);
++	soft_damage(view);
+ 
+ 	wl_list_for_each (screen, &swc.screens, link) {
+ 		if (!screen->planes.cursor)
+diff -ru a/libswc/swc.h b/libswc/swc.h
+--- a/libswc/swc.h	2026-11-13 23:05:10.233880337 +0200
++++ b/libswc/swc.h	2026-11-14 14:31:08.530920343 +0200
+@@ -243,6 +243,9 @@
+  */
+ void swc_window_begin_move(struct swc_window *window);
+ 
++/* pointer, global coords */
++void swc_pointer_position(int32_t *x, int32_t *y);
++
+ /**
+  * End an interactive move of the specified window.
+  */

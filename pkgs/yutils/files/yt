@@ -1,0 +1,9 @@
+#!/bin/sh
+# no video player
+# audio, or download
+case $1 in
+-d) [ "$2" ] || exec "$0"
+    exec yt-dlp -q -f "bv*[vcodec^=avc1][height<=${3:-720}]+ba[ext=m4a]/b" --merge-output-format mp4 "$2" ;;
+?*) yt-dlp -q -o - -f "ba[ext=m4a]/ba/b" "$1" | ffmpeg -loglevel error -i - -vn -f alsa default ;;
+*) echo "usage: yt url (play audio) | yt -d url [height] (download)" >&2; exit 1 ;;
+esac

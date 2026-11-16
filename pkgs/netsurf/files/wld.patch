@@ -1,0 +1,287 @@
+diff -ru a/libnsfb/src/surface/wld.c b/libnsfb/src/surface/wld.c
+--- a/libnsfb/src/surface/wld.c	2026-11-14 14:32:31.923074840 +0200
++++ b/libnsfb/src/surface/wld.c	2026-11-14 14:33:29.006620044 +0200
+@@ -27,6 +27,8 @@
+ #include <sys/mman.h>
+ 
+ #include <linux/input.h>
++#include <time.h>
++#include <sys/select.h>
+ #include <wayland-client.h>
+ 
+ #include "libnsfb.h"
+@@ -78,6 +80,10 @@
+     /** event queue */
+     struct wld_event *event_head;
+     struct wld_event *event_tail;
++
++    int rkey; /* held key */
++    long long rnext; /* next repeat, ms */
++    nsfb_t *nsfb; /* for resize */
+ };
+ 
+ /** wayland input seat */
+@@ -667,11 +673,28 @@
+ #endif
+ 
+ 
++static struct wld_shm_buffer *new_shm_buffer(struct wl_shm *shm, int width, int height, uint32_t format);
++static void free_shm_buffer(struct wld_shm_buffer *shmbuf);
++
+ static int
+ wld_set_geometry(nsfb_t *nsfb, int width, int height, enum nsfb_format_e format)
+ {
+-    if (nsfb->surface_priv != NULL)
+-	return -1; /* if were already initialised fail */
++    wldstate_t *wldstate = nsfb->surface_priv;
++
++    if (wldstate != NULL) {
++	/* new buffer, new size */
++	struct wld_shm_buffer *b = new_shm_buffer(wldstate->connection->shm,
++						  width, height, WL_SHM_FORMAT_XRGB8888);
++	if (b == NULL)
++	    return -1;
++	wl_buffer_destroy(wldstate->shm_buffer->buffer);
++	free_shm_buffer(wldstate->shm_buffer);
++	wldstate->shm_buffer = b;
++	wldstate->window->width = width;
++	wldstate->window->height = height;
++	nsfb->ptr = b->data;
++	nsfb->linelen = width * 4;
++    }
+ 
+     nsfb->width = width;
+     nsfb->height = height;
+@@ -880,6 +903,8 @@
+ 	shm_format
+ };
+ 
++static void push_key(struct wld_connection *connection, int type, enum nsfb_key_code_e code);
++
+ static void
+ pointer_handle_enter(void *data, struct wl_pointer *pointer,
+ 		     uint32_t serial, struct wl_surface *surface,
+@@ -915,11 +940,10 @@
+ 	input_set_focus_widget(input, widget, sx, sy);
+ #else
+ 	UNUSED(data);
+-	UNUSED(pointer);
+-	UNUSED(serial);
+ 	UNUSED(surface);
+ 	UNUSED(sx_w);
+ 	UNUSED(sy_w);
++	wl_pointer_set_cursor(pointer, serial, NULL, 0, 0); /* we draw ours */
+ #endif
+ }
+ 
+@@ -1074,14 +1098,138 @@
+ 					axis, value,
+ 					widget->user_data);
+ #else
+-	UNUSED(data);
++	struct wld_input *input = data;
++	enum nsfb_key_code_e code = value < 0 ? NSFB_KEY_MOUSE_4 : NSFB_KEY_MOUSE_5;
+ 	UNUSED(pointer);
+ 	UNUSED(time);
+-	UNUSED(axis);
+-	UNUSED(value);
++	if (axis != WL_POINTER_AXIS_VERTICAL_SCROLL)
++	    return;
++	push_key(input->connection, NSFB_EVENT_KEY_DOWN, code);
++	push_key(input->connection, NSFB_EVENT_KEY_UP, code);
+ #endif
+ }
+ 
++/* evdev to nsfb */
++static const enum nsfb_key_code_e keymap[KEY_RIGHTMETA + 1] = {
++    [KEY_ESC] = NSFB_KEY_ESCAPE, [KEY_1] = NSFB_KEY_1, [KEY_2] = NSFB_KEY_2,
++    [KEY_3] = NSFB_KEY_3, [KEY_4] = NSFB_KEY_4, [KEY_5] = NSFB_KEY_5,
++    [KEY_6] = NSFB_KEY_6, [KEY_7] = NSFB_KEY_7, [KEY_8] = NSFB_KEY_8,
++    [KEY_9] = NSFB_KEY_9, [KEY_0] = NSFB_KEY_0, [KEY_MINUS] = NSFB_KEY_MINUS,
++    [KEY_EQUAL] = NSFB_KEY_EQUALS, [KEY_BACKSPACE] = NSFB_KEY_BACKSPACE,
++    [KEY_TAB] = NSFB_KEY_TAB, [KEY_Q] = NSFB_KEY_q, [KEY_W] = NSFB_KEY_w,
++    [KEY_E] = NSFB_KEY_e, [KEY_R] = NSFB_KEY_r, [KEY_T] = NSFB_KEY_t,
++    [KEY_Y] = NSFB_KEY_y, [KEY_U] = NSFB_KEY_u, [KEY_I] = NSFB_KEY_i,
++    [KEY_O] = NSFB_KEY_o, [KEY_P] = NSFB_KEY_p,
++    [KEY_LEFTBRACE] = NSFB_KEY_LEFTBRACKET, [KEY_RIGHTBRACE] = NSFB_KEY_RIGHTBRACKET,
++    [KEY_ENTER] = NSFB_KEY_RETURN, [KEY_LEFTCTRL] = NSFB_KEY_LCTRL,
++    [KEY_A] = NSFB_KEY_a, [KEY_S] = NSFB_KEY_s, [KEY_D] = NSFB_KEY_d,
++    [KEY_F] = NSFB_KEY_f, [KEY_G] = NSFB_KEY_g, [KEY_H] = NSFB_KEY_h,
++    [KEY_J] = NSFB_KEY_j, [KEY_K] = NSFB_KEY_k, [KEY_L] = NSFB_KEY_l,
++    [KEY_SEMICOLON] = NSFB_KEY_SEMICOLON, [KEY_APOSTROPHE] = NSFB_KEY_QUOTE,
++    [KEY_GRAVE] = NSFB_KEY_BACKQUOTE, [KEY_LEFTSHIFT] = NSFB_KEY_LSHIFT,
++    [KEY_BACKSLASH] = NSFB_KEY_BACKSLASH, [KEY_Z] = NSFB_KEY_z,
++    [KEY_X] = NSFB_KEY_x, [KEY_C] = NSFB_KEY_c, [KEY_V] = NSFB_KEY_v,
++    [KEY_B] = NSFB_KEY_b, [KEY_N] = NSFB_KEY_n, [KEY_M] = NSFB_KEY_m,
++    [KEY_COMMA] = NSFB_KEY_COMMA, [KEY_DOT] = NSFB_KEY_PERIOD,
++    [KEY_SLASH] = NSFB_KEY_SLASH, [KEY_RIGHTSHIFT] = NSFB_KEY_RSHIFT,
++    [KEY_KPASTERISK] = NSFB_KEY_KP_MULTIPLY, [KEY_LEFTALT] = NSFB_KEY_LALT,
++    [KEY_SPACE] = NSFB_KEY_SPACE, [KEY_CAPSLOCK] = NSFB_KEY_CAPSLOCK,
++    [KEY_F1] = NSFB_KEY_F1, [KEY_F2] = NSFB_KEY_F2, [KEY_F3] = NSFB_KEY_F3,
++    [KEY_F4] = NSFB_KEY_F4, [KEY_F5] = NSFB_KEY_F5, [KEY_F6] = NSFB_KEY_F6,
++    [KEY_F7] = NSFB_KEY_F7, [KEY_F8] = NSFB_KEY_F8, [KEY_F9] = NSFB_KEY_F9,
++    [KEY_F10] = NSFB_KEY_F10, [KEY_F11] = NSFB_KEY_F11, [KEY_F12] = NSFB_KEY_F12,
++    [KEY_NUMLOCK] = NSFB_KEY_NUMLOCK, [KEY_SCROLLLOCK] = NSFB_KEY_SCROLLOCK,
++    [KEY_KP7] = NSFB_KEY_KP7, [KEY_KP8] = NSFB_KEY_KP8, [KEY_KP9] = NSFB_KEY_KP9,
++    [KEY_KPMINUS] = NSFB_KEY_KP_MINUS, [KEY_KP4] = NSFB_KEY_KP4,
++    [KEY_KP5] = NSFB_KEY_KP5, [KEY_KP6] = NSFB_KEY_KP6,
++    [KEY_KPPLUS] = NSFB_KEY_KP_PLUS, [KEY_KP1] = NSFB_KEY_KP1,
++    [KEY_KP2] = NSFB_KEY_KP2, [KEY_KP3] = NSFB_KEY_KP3, [KEY_KP0] = NSFB_KEY_KP0,
++    [KEY_KPDOT] = NSFB_KEY_KP_PERIOD, [KEY_KPENTER] = NSFB_KEY_KP_ENTER,
++    [KEY_RIGHTCTRL] = NSFB_KEY_RCTRL, [KEY_KPSLASH] = NSFB_KEY_KP_DIVIDE,
++    [KEY_RIGHTALT] = NSFB_KEY_RALT, [KEY_HOME] = NSFB_KEY_HOME,
++    [KEY_UP] = NSFB_KEY_UP, [KEY_PAGEUP] = NSFB_KEY_PAGEUP,
++    [KEY_LEFT] = NSFB_KEY_LEFT, [KEY_RIGHT] = NSFB_KEY_RIGHT,
++    [KEY_END] = NSFB_KEY_END, [KEY_DOWN] = NSFB_KEY_DOWN,
++    [KEY_PAGEDOWN] = NSFB_KEY_PAGEDOWN, [KEY_INSERT] = NSFB_KEY_INSERT,
++    [KEY_DELETE] = NSFB_KEY_DELETE, [KEY_LEFTMETA] = NSFB_KEY_LSUPER,
++    [KEY_RIGHTMETA] = NSFB_KEY_RSUPER,
++};
++
++static long long
++now_ms(void)
++{
++    struct timespec ts;
++    clock_gettime(CLOCK_MONOTONIC, &ts);
++    return ts.tv_sec * 1000LL + ts.tv_nsec / 1000000;
++}
++
++static void
++push_key(struct wld_connection *connection, int type, enum nsfb_key_code_e code)
++{
++    struct wld_event *event = calloc(1, sizeof(struct wld_event));
++    if (event == NULL)
++	return;
++    event->event.type = type;
++    event->event.value.keycode = code;
++    enqueue_wld_event(connection, event);
++}
++
++static void
++kb_keymap(void *data, struct wl_keyboard *kb, uint32_t format, int32_t fd, uint32_t size)
++{
++    UNUSED(data); UNUSED(kb); UNUSED(format); UNUSED(size);
++    close(fd); /* keymap unused */
++}
++
++static void
++kb_enter(void *data, struct wl_keyboard *kb, uint32_t serial, struct wl_surface *surface, struct wl_array *keys)
++{
++    UNUSED(data); UNUSED(kb); UNUSED(serial); UNUSED(surface); UNUSED(keys);
++}
++
++static void
++kb_leave(void *data, struct wl_keyboard *kb, uint32_t serial, struct wl_surface *surface)
++{
++    struct wld_input *input = data;
++    UNUSED(kb); UNUSED(serial); UNUSED(surface);
++    input->connection->rkey = 0;
++}
++
++static void
++kb_key(void *data, struct wl_keyboard *kb, uint32_t serial, uint32_t time, uint32_t key, uint32_t state)
++{
++    struct wld_input *input = data;
++    struct wld_connection *c = input->connection;
++    enum nsfb_key_code_e code;
++    UNUSED(kb); UNUSED(serial); UNUSED(time);
++
++    if (key > KEY_RIGHTMETA || (code = keymap[key]) == NSFB_KEY_UNKNOWN)
++	return;
++    if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
++	push_key(c, NSFB_EVENT_KEY_DOWN, code);
++	if (code < NSFB_KEY_NUMLOCK) /* no modifier repeat */
++	    c->rkey = code, c->rnext = now_ms() + 500;
++    } else {
++	push_key(c, NSFB_EVENT_KEY_UP, code);
++	if (c->rkey == (int)code)
++	    c->rkey = 0;
++    }
++}
++
++static void
++kb_mods(void *data, struct wl_keyboard *kb, uint32_t serial, uint32_t d, uint32_t l, uint32_t k, uint32_t g)
++{
++    UNUSED(data); UNUSED(kb); UNUSED(serial); UNUSED(d); UNUSED(l); UNUSED(k); UNUSED(g);
++}
++
++static const struct wl_keyboard_listener keyboard_listener = {
++	.keymap = kb_keymap,
++	.enter = kb_enter,
++	.leave = kb_leave,
++	.key = kb_key,
++	.modifiers = kb_mods,
++};
++
+ static const struct wl_pointer_listener pointer_listener = {
+ 	.enter  = pointer_handle_enter,
+ 	.leave  = pointer_handle_leave,
+@@ -1108,7 +1256,7 @@
+ 	input->pointer = NULL;
+     }
+ 
+-#if 0
++#if 1
+     if ((caps & WL_SEAT_CAPABILITY_KEYBOARD) && !input->keyboard) {
+ 	input->keyboard = wl_seat_get_keyboard(seat);
+ 
+@@ -1362,11 +1510,21 @@
+ handle_configure(void *data, struct wl_shell_surface *shell_surface,
+ 		 uint32_t edges, int32_t width, int32_t height)
+ {
+-    UNUSED(data);
++    struct wld_window *window = data;
++    struct wld_event *event;
+     UNUSED(shell_surface);
+     UNUSED(edges);
+-    UNUSED(width);
+-    UNUSED(height);
++
++    if (width <= 0 || height <= 0 ||
++	(width == window->width && height == window->height))
++	return;
++    event = calloc(1, sizeof(struct wld_event));
++    if (event == NULL)
++	return;
++    event->event.type = NSFB_EVENT_RESIZE; /* wm resized us */
++    event->event.value.resize.w = width;
++    event->event.value.resize.h = height;
++    enqueue_wld_event(window->connection, event);
+ }
+ 
+ static void
+@@ -1793,9 +1951,25 @@
+ 	return false;
+     }
+ 
++    /* already read events */
++    wl_display_dispatch_pending(wldstate->connection->display);
++
+     /* flush any pending outgoing messages to server */
+     wl_display_flush(wldstate->connection->display);
+ 
++    /* key repeat */
++    if (wldstate->connection->rkey && wldstate->connection->event_head == NULL) {
++	long long t = wldstate->connection->rnext - now_ms();
++	if (t <= 0) {
++	    wldstate->connection->rnext = now_ms() + 40;
++	    event->type = NSFB_EVENT_KEY_DOWN;
++	    event->value.keycode = wldstate->connection->rkey;
++	    return true;
++	}
++	if (timeout < 0 || t < timeout)
++	    timeout = t;
++    }
++
+     /* if there are queued input events, return them first */
+     wldevent = dequeue_wld_event(wldstate->connection);
+     if (wldevent != NULL) {
+@@ -1819,7 +1993,7 @@
+ 	FD_SET(confd, &rfds);
+ 
+ 	tv.tv_sec = timeout / 1000;
+-	tv.tv_usec = timeout % 1000;
++	tv.tv_usec = (timeout % 1000) * 1000;
+ 
+ 	retval = select(confd + 1, &rfds, NULL, NULL, &tv);
+ 	if (retval == 0) {

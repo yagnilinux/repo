@@ -1,0 +1,3 @@
+#!/bin/sh -e
+mkdir -p "$1/etc"
+echo "you aren't gonna need it." > "$1/etc/motd"

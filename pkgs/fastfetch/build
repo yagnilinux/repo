@@ -1,0 +1,19 @@
+#!/bin/sh -e
+# static, yagni penguin
+sh "$PKG/musl.sh"
+kh=$(mktemp -d)
+for d in linux asm-generic drm; do ln -s "/usr/include/$d" "$kh/$d"; done
+ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
+mkdir -p build && cd build
+off=""
+for f in DBUS X11 XCB XCB_RANDR XRANDR WAYLAND DRM DRM_AMDGPU GIO DCONF SQLITE3 RPM \
+         IMAGEMAGICK7 IMAGEMAGICK6 CHAFA ZLIB EGL GLX OPENCL VULKAN FREETYPE PULSE \
+         DDCUTIL ELF DIRECTX_HEADERS LIBZFS; do off="$off -DENABLE_$f=OFF"; done
+CC=musl-gcc cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel -DBUILD_SHARED_LIBS=OFF \
+    -DCMAKE_EXE_LINKER_FLAGS=-static -DCMAKE_C_FLAGS="-I$kh" -DBINARY_LINK_TYPE=static $off >/dev/null
+make -j"$(nproc)" fastfetch >/dev/null
+strip fastfetch
+install -Dm755 fastfetch "$1/usr/bin/fastfetch"
+install -Dm644 "$PKG/files/logo.txt" "$1/usr/share/fastfetch/yagni.txt"
+install -Dm644 "$PKG/files/config.jsonc" "$1/etc/xdg/fastfetch/config.jsonc"
+rm -rf "$kh"

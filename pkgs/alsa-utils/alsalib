@@ -1,0 +1,22 @@
+#!/bin/sh -e
+# alsalib: alsa-lib, static, into $ROOT/src/alsa-prefix. Runs once.
+# alsa-utils and ffmpeg both link it.
+A=$ROOT/src/alsa-prefix
+[ -f "$A/.done" ] && exit 0
+mkdir -p "$A/src" "$A/kh"
+for d in linux asm-generic; do ln -sfn "/usr/include/$d" "$A/kh/$d"; done
+ln -sfn /usr/include/x86_64-linux-gnu/asm "$A/kh/asm"
+cd "$A/src"
+[ -d "$(ls -d alsa-lib-[0-9]*/ 2>/dev/null | head -n1)" ] || apt-get source -qq alsa-lib >/dev/null 2>&1
+cd "$(ls -d "$A"/src/alsa-lib-[0-9]*/ | head -n1)"
+[ -x configure ] || autoreconf -fi >/dev/null 2>&1
+CC=musl-gcc CFLAGS="-O2 -I$A/kh" ./configure -q --prefix="$A" --enable-static --disable-shared \
+    --with-configdir=/usr/share/alsa --disable-python --disable-ucm --disable-topology \
+    --disable-alisp --disable-old-symbols --disable-seq --disable-rawmidi --disable-hwdep \
+    --without-debug --without-versioned >/dev/null
+make -s -j"$(nproc)" >/dev/null
+make -s install DESTDIR="$A/dest" >/dev/null
+cp -r "$A/dest$A/lib" "$A/dest$A/include" "$A/"
+cp -r "$A/dest/usr/share" "$A/share"
+sed -i 's/^Libs:.*/& -lm -lpthread/' "$A/lib/pkgconfig/alsa.pc"
+touch "$A/.done"

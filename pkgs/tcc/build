@@ -1,0 +1,9 @@
+#!/bin/sh -e
+# compiler, assembler, linker
+# needs musl-dev
+./configure --prefix=/usr --cc=musl-gcc --config-musl --extra-ldflags="-static -s" --crtprefix=/usr/lib \
+    --sysincludepaths=/usr/lib/tcc/include:/usr/include --libpaths=/usr/lib:/usr/lib/tcc >/dev/null
+make -s >/dev/null 2>&1
+install -Dm755 tcc "$1/usr/bin/tcc"
+install -Dm644 libtcc1.a "$1/usr/lib/tcc/libtcc1.a"
+mkdir -p "$1/usr/lib/tcc/include" && cp include/*.h "$1/usr/lib/tcc/include/"

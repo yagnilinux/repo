@@ -1,0 +1,12 @@
+#!/bin/sh -e
+# kirsch bitmap font
+# ttf from release
+u=https://github.com/molarmanful/kirsch
+d=$1/usr/share/fonts/kirsch
+mkdir -p "$d" "$1/usr/share/licenses/kirsch"
+curl -sfL -o "$d/kirsch.ttf" "$u/releases/download/v0.7.3/kirsch.ttf"
+curl -sfL -o "$1/usr/share/licenses/kirsch/LICENSE" "https://raw.githubusercontent.com/molarmanful/kirsch/v0.7.3/LICENSE"
+sha256sum -c >/dev/null <<S
+bde5f16e946e4d2421078cb8ed4ecd766cde6c4481e0e5f8b816cb66e765d93c  $d/kirsch.ttf
+d889040dd7429249b02de25c873d4554c119a13ea4ebc91962efa48b9e90f6c7  $1/usr/share/licenses/kirsch/LICENSE
+S

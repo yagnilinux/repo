@@ -1,0 +1,49 @@
+#!/bin/sh -e
+# build every package
+# skip built ones
+# changed recipe? bump version
+cd "${0%/*}"
+ROOT=$PWD
+
+# fetch name kind args...
+#   shallow clone
+#   ubuntu source, patched
+#   ubuntu binaries, unpacked
+fetch() {
+    n=$1 kind=$2; shift 2
+    t=src/$n.tmp && rm -rf "$t" && mkdir -p "$t"
+    case $kind in
+        git)     git clone -q --depth 1 --branch "$2" "$1" "$t/x" ;;
+        apt-src) (cd "$t" && apt-get source -qq "$@" >/dev/null 2>&1) ;;
+        apt-deb) (cd "$t" && apt-get download -qq "$@" 2>/dev/null &&
+                  for p in *.deb; do dpkg-deb -x "$p" x; done && rm -f ./*.deb) ;;
+    esac
+    mv "$(find "$t" -mindepth 1 -maxdepth 1 -type d | head -n1)" "src/$n"
+    rm -rf "$t"
+}
+mkdir -p repo src
+: > repo/index.tmp
+for d in pkgs/*/; do
+    [ -f "$d/build" ] || continue      # work in progress, not a package yet
+    n=${d%/} n=${n##*/} v=$(cat "$d/version")
+    deps=; [ -f "$d/depends" ] && deps=$(tr '\n' , < "$d/depends" | sed 's/,$//')
+    out=repo/$n@$v.tar.gz
+    if [ -f "$out" ] && [ -n "$(find "$d" -newer "$out" | head -n1)" ]; then
+        echo "mkrepo: $n changed but is still $v. Bump pkgs/$n/version." >&2; exit 1
+    fi
+    if [ ! -f "$out" ]; then
+        dir=$ROOT/$d
+        if [ -f "$d/source" ]; then
+            [ -d "src/$n" ] || fetch "$n" $(cat "$d/source")
+            dir=$ROOT/src/$n
+        fi
+        dest=$(mktemp -d)
+        (cd "$dir" && PKG=$ROOT/$d ROOT=$ROOT "$ROOT/$d/build" "$dest")
+        tar czf "$out" -C "$dest" .
+        rm -rf "$dest"
+        echo "-> $n $v built"
+    fi
+    sum=-; [ -z "$SUMS" ] || sum=$(sha256sum < "$out")   # SUMS=1 ./mkrepo to ship sums
+    echo "$n $v ${sum%% *} ${deps:--}" >> repo/index.tmp
+done
+mv repo/index.tmp repo/index

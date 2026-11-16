@@ -1,0 +1,259 @@
+diff -ruN a/libswc/compositor.c b/libswc/compositor.c
+--- a/libswc/compositor.c	2026-11-14 16:09:51.951726898 +0200
++++ b/libswc/compositor.c	2026-11-14 16:10:00.957794069 +0200
+@@ -45,8 +45,11 @@
+ #include "view.h"
+ 
+ #include <errno.h>
++#include <fcntl.h>
++#include <signal.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <unistd.h>
+ #include <assert.h>
+ #include <wld/wld.h>
+ #include <wld/drm.h>
+@@ -58,6 +61,8 @@
+ 	struct view *view;
+ 	struct view_handler view_handler;
+ 	uint32_t mask;
++	struct wld_buffer *bg; /* scaled wallpaper */
++	unsigned bg_gen;
+ 
+ 	struct wl_listener screen_destroy_listener;
+ };
+@@ -95,6 +100,8 @@
+ 	struct target *target = wl_container_of(listener, target, screen_destroy_listener);
+ 
+ 	wld_destroy_surface(target->surface);
++	if (target->bg)
++		wld_buffer_unreference(target->bg);
+ 	free(target);
+ }
+ 
+@@ -195,7 +202,8 @@
+ 	target->view = &screen->planes.primary.view;
+ 	target->view_handler.impl = &screen_view_handler;
+ 	wl_list_insert(&target->view->handlers, &target->view_handler.link);
+-	target->current_buffer = NULL;
++	target->current_buffer = target->next_buffer = NULL;
++	target->bg = NULL, target->bg_gen = 0;
+ 	target->mask = screen_mask(screen);
+ 
+ 	target->screen_destroy_listener.notify = &handle_screen_destroy;
+@@ -209,6 +217,189 @@
+ 	return NULL;
+ }
+ 
++/* Wallpaper and snapshot {{{ */
++
++static pixman_image_t *wall;
++static unsigned wall_gen = 1;
++static int sig_pipe[2] = {-1, -1};
++
++static void schedule_updates(uint32_t screens);
++
++static void
++free_bits(pixman_image_t *img, void *data)
++{
++	free(data);
++}
++
++/* read P6 ppm */
++static pixman_image_t *
++ppm_load(const char *path)
++{
++	FILE *f = fopen(path, "rb");
++	pixman_image_t *img = NULL;
++	unsigned w, h, max;
++	uint32_t *px;
++	unsigned char *b;
++	size_t n;
++
++	if (!f)
++		return NULL;
++	if (fscanf(f, "P6 %u %u %u", &w, &h, &max) == 3 && fgetc(f) != EOF && max == 255 &&
++	    w && h && w <= 8192 && h <= 8192 && (px = malloc((size_t)w * h * 4))) {
++		n = (size_t)w * h;
++		b = (unsigned char *)px + n; /* expand in place */
++		if (fread(b, 3, n, f) == n) {
++			for (size_t i = 0; i < n; ++i, b += 3)
++				px[i] = 0xff000000 | b[0] << 16 | b[1] << 8 | b[2];
++			img = pixman_image_create_bits(PIXMAN_x8r8g8b8, w, h, px, w * 4);
++		}
++		if (img)
++			pixman_image_set_destroy_function(img, free_bits, px);
++		else
++			free(px);
++	}
++	fclose(f);
++	return img;
++}
++
++static void
++wall_load(void)
++{
++	char path[512];
++	const char *p = getenv("WALL"), *run = getenv("XDG_RUNTIME_DIR");
++	struct screen *screen;
++
++	if (!p && run && snprintf(path, sizeof(path), "%s/wall.ppm", run) < (int)sizeof(path))
++		p = path;
++	if (wall)
++		pixman_image_unref(wall);
++	wall = p ? ppm_load(p) : NULL;
++	++wall_gen;
++	wl_list_for_each (screen, &swc.screens, link) {
++		struct swc_rectangle *g = &screen->base.geometry;
++		pixman_region32_union_rect(&compositor.damage, &compositor.damage, g->x, g->y, g->width, g->height);
++	}
++	schedule_updates(-1);
++}
++
++/* cover, or tile */
++static struct wld_buffer *
++target_bg(struct target *target)
++{
++	uint32_t w = target->view->geometry.width, h = target->view->geometry.height;
++	struct wld_buffer *b;
++	pixman_image_t *dst;
++	pixman_transform_t t;
++	double iw, ih, s;
++
++	if (target->bg_gen == wall_gen)
++		return target->bg;
++	target->bg_gen = wall_gen;
++	if (target->bg)
++		wld_buffer_unreference(target->bg);
++	target->bg = NULL;
++	if (!wall || !(b = wld_create_buffer(swc.drm->context, w, h, WLD_FORMAT_XRGB8888, WLD_FLAG_MAP)))
++		return NULL;
++	if (!wld_map(b)) {
++		wld_buffer_unreference(b);
++		return NULL;
++	}
++	iw = pixman_image_get_width(wall), ih = pixman_image_get_height(wall);
++	s = w / iw > h / ih ? w / iw : h / ih;
++	pixman_transform_init_identity(&t);
++	if (iw > 64 || ih > 64) { /* else tile */
++		t.matrix[0][0] = t.matrix[1][1] = pixman_double_to_fixed(1 / s);
++		t.matrix[0][2] = pixman_double_to_fixed((iw - w / s) / 2);
++		t.matrix[1][2] = pixman_double_to_fixed((ih - h / s) / 2);
++	} else
++		s = 1;
++	pixman_image_set_transform(wall, &t);
++	pixman_image_set_filter(wall, s == (int)s ? PIXMAN_FILTER_NEAREST : PIXMAN_FILTER_BILINEAR, NULL, 0);
++	pixman_image_set_repeat(wall, s == 1 && iw <= 64 && ih <= 64 ? PIXMAN_REPEAT_NORMAL : PIXMAN_REPEAT_PAD);
++	dst = pixman_image_create_bits(PIXMAN_x8r8g8b8, w, h, b->map, b->pitch);
++	if (dst) {
++		pixman_image_composite32(PIXMAN_OP_SRC, wall, NULL, dst, 0, 0, 0, 0, 0, 0, w, h);
++		pixman_image_unref(dst);
++	}
++	wld_unmap(b);
++	return target->bg = b;
++}
++
++/* dump first screen */
++static void
++snap(void)
++{
++	const char *dir = getenv("XDG_RUNTIME_DIR");
++	char tmp[520], path[512];
++	struct screen *screen;
++	struct target *target;
++	struct wld_buffer *b;
++	FILE *f;
++
++	if (!dir || snprintf(path, sizeof(path), "%s/snap.ppm", dir) >= (int)sizeof(path))
++		return;
++	snprintf(tmp, sizeof(tmp), "%s.tmp", path);
++	wl_list_for_each (screen, &swc.screens, link) {
++		if (!(target = target_get(screen)) || !(b = target->next_buffer) || !wld_map(b))
++			continue;
++		if ((f = fopen(tmp, "wb"))) {
++			fprintf(f, "P6\n%u %u\n255\n", b->width, b->height);
++			for (uint32_t y = 0; y < b->height; ++y) {
++				uint32_t *row = (uint32_t *)((char *)b->map + y * b->pitch);
++				for (uint32_t x = 0; x < b->width; ++x) {
++					putc(row[x] >> 16 & 0xff, f);
++					putc(row[x] >> 8 & 0xff, f);
++					putc(row[x] & 0xff, f);
++				}
++			}
++			if (fclose(f) == 0)
++				rename(tmp, path);
++		}
++		wld_unmap(b);
++		break;
++	}
++}
++
++static void
++handle_signal(int sig)
++{
++	char c = sig;
++	int e = errno;
++
++	write(sig_pipe[1], &c, 1);
++	errno = e;
++}
++
++static int
++handle_sig_pipe(int fd, uint32_t mask, void *data)
++{
++	char c;
++
++	while (read(fd, &c, 1) == 1) {
++		if (c == SIGUSR1)
++			wall_load();
++		else if (c == SIGUSR2)
++			snap();
++	}
++	return 0;
++}
++
++/* usr1 wall, usr2 snap */
++static void
++signals_initialize(void)
++{
++	struct sigaction sa = {.sa_handler = handle_signal, .sa_flags = SA_RESTART};
++
++	if (pipe2(sig_pipe, O_CLOEXEC | O_NONBLOCK) < 0)
++		return;
++	wl_event_loop_add_fd(swc.event_loop, sig_pipe[0], WL_EVENT_READABLE, handle_sig_pipe, NULL);
++	sigemptyset(&sa.sa_mask);
++	sigaction(SIGUSR1, &sa, NULL);
++	sigaction(SIGUSR2, &sa, NULL);
++}
++
++/* }}} */
++
+ /* Rendering {{{ */
+ 
+ static void
+@@ -258,10 +449,14 @@
+ 
+ 	wld_set_target_surface(swc.drm->renderer, target->surface);
+ 
+-	/* Paint base damage black. */
++	/* Paint wallpaper or black. */
+ 	if (pixman_region32_not_empty(base_damage)) {
++		struct wld_buffer *bg = target_bg(target);
+ 		pixman_region32_translate(base_damage, -target->view->geometry.x, -target->view->geometry.y);
+-		wld_fill_region(swc.drm->renderer, 0xff000000, base_damage);
++		if (bg)
++			wld_copy_region(swc.drm->renderer, bg, 0, 0, base_damage);
++		else
++			wld_fill_region(swc.drm->renderer, 0xff000000, base_damage);
+ 	}
+ 
+ 	wl_list_for_each_reverse (view, views, link) {
+@@ -860,6 +1055,8 @@
+ 
+ 	wl_list_for_each (screen, &swc.screens, link)
+ 		target_new(screen);
++	signals_initialize();
++	wall_load();
+ 	if (swc.active)
+ 		schedule_updates(-1);
+ 

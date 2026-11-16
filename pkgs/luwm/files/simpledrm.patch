@@ -1,0 +1,56 @@
+--- a/libswc/drm.c
++++ b/libswc/drm.c
+@@ -269,7 +269,7 @@
+ 	swc.drm->cursor_h = val;
+ 
+ 	drm.path = drmGetRenderDeviceNameFromFd(swc.drm->fd);
+-	if (!drm.path) {
++	if (!drm.path && !(drm.path = strdup(primary))) {
+ 		ERROR("Could not determine render node path\n");
+ 		goto error1;
+ 	}
+--- a/libswc/pointer.c
++++ b/libswc/pointer.c
+@@ -109,6 +109,8 @@
+ 		view_update_screens(view);
+ 
+ 	wl_list_for_each (screen, &swc.screens, link) {
++		if (!screen->planes.cursor)
++			continue;
+ 		view_attach(&screen->planes.cursor->view, buffer ? pointer->cursor.buffer : NULL);
+ 		view_update(&screen->planes.cursor->view);
+ 	}
+@@ -125,6 +127,8 @@
+ 		view_update_screens(view);
+ 
+ 	wl_list_for_each (screen, &swc.screens, link) {
++		if (!screen->planes.cursor)
++			continue;
+ 		view_move(&screen->planes.cursor->view, view->geometry.x, view->geometry.y);
+ 		view_update(&screen->planes.cursor->view);
+ 	}
+@@ -285,8 +289,10 @@
+ 
+ 	pointer_set_cursor(pointer, cursor_left_ptr);
+ 
+-	wl_list_for_each (screen, &swc.screens, link)
+-		view_attach(&screen->planes.cursor->view, pointer->cursor.buffer);
++	wl_list_for_each (screen, &swc.screens, link) {
++		if (screen->planes.cursor)
++			view_attach(&screen->planes.cursor->view, pointer->cursor.buffer);
++	}
+ 
+ 	input_focus_initialize(&pointer->focus, &pointer->focus_handler);
+ 	pixman_region32_init(&pointer->region);
+--- a/libswc/screen.c
++++ b/libswc/screen.c
+@@ -121,7 +121,8 @@
+ 		goto error2;
+ 	}
+ 
+-	cursor_plane->screen = screen;
++	if (cursor_plane)
++		cursor_plane->screen = screen;
+ 	screen->planes.cursor = cursor_plane;
+ 
+ 	screen->handler = &null_handler;

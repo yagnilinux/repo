@@ -1,0 +1,10 @@
+#!/bin/sh -e
+# borrow host kernel headers
+kh=$(mktemp -d)
+for d in linux asm-generic mtd; do ln -s "/usr/include/$d" "$kh/$d"; done
+ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
+sed "s|@KH@|$kh|" "$PKG/config" > .config
+make -s oldconfig </dev/null >/dev/null
+make -j"$(nproc)" CC=musl-gcc >/dev/null
+make CC=musl-gcc CONFIG_PREFIX="$1" install >/dev/null
+rm -rf "$1/linuxrc" "$kh"

@@ -1,0 +1,12 @@
+#!/bin/sh
+# handle file.new copies
+#   list / diff f
+#   take f / keep f
+f=${2%.new}
+case $1 in
+    '')   find /etc -name '*.new' | sed 's/\.new$//' ;;
+    diff) diff -u "$f" "$f.new" ;;
+    take) mv "$f.new" "$f" ;;
+    keep) rm "$f.new" ;;
+    *)    echo "usage: etcnew [diff|take|keep file]" >&2; exit 1 ;;
+esac

@@ -1,0 +1,5 @@
+#!/bin/sh -e
+# mozilla ca bundle
+mkdir -p "$1/etc/ssl/certs"
+cat usr/share/ca-certificates/mozilla/*.crt > "$1/etc/ssl/certs/ca-certificates.crt"
+ln -s certs/ca-certificates.crt "$1/etc/ssl/cert.pem"

@@ -1,0 +1,3 @@
+#!/bin/sh -e
+# posix sh fetch
+install -Dm755 pfetch "$1/usr/bin/pfetch"

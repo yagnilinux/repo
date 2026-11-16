@@ -1,0 +1,5 @@
+#!/bin/sh -e
+# add a user
+[ "$1" ] || { echo "usage: mkuser name" >&2; exit 1; }
+adduser -s /bin/sh "$1"
+for g in video input audio; do addgroup "$1" "$g"; done

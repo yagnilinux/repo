@@ -1,0 +1,4 @@
+#!/bin/sh -e
+mkdir -p "$1/usr/share/fonts/dejavu" "$1/var/cache/fontconfig"
+cp usr/share/fonts/truetype/dejavu/DejaVuSans*.ttf "$1/usr/share/fonts/dejavu/"
+install -Dm644 "$PKG/files/fonts.conf" "$1/etc/fonts/fonts.conf"

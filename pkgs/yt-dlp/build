@@ -1,0 +1,8 @@
+#!/bin/sh -e
+# plain python, copied
+# qjs runs player js
+mkdir -p "$1/usr/lib/yt-dlp" "$1/usr/bin" "$1/etc"
+cp -r yt_dlp "$1/usr/lib/yt-dlp/"
+printf '#!/bin/sh\nPYTHONPATH=/usr/lib/yt-dlp exec python -m yt_dlp "$@"\n' > "$1/usr/bin/yt-dlp"
+chmod 755 "$1/usr/bin/yt-dlp"
+echo '--js-runtimes quickjs' > "$1/etc/yt-dlp.conf"

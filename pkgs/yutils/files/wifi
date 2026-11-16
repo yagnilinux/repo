@@ -1,0 +1,11 @@
+#!/bin/sh -e
+# save and connect
+[ "$2" ] || { echo "usage: wifi network password" >&2; exit 1; }
+wpa_passphrase "$1" "$2" > /etc/wpa_supplicant.conf
+chmod 600 /etc/wpa_supplicant.conf
+killall wpa_supplicant udhcpc 2>/dev/null || :
+for i in /sys/class/net/wl*; do
+    [ -e "$i" ] || { echo "wifi: no wireless card found" >&2; exit 1; }
+    wpa_supplicant -B -D wext -i "${i##*/}" -c /etc/wpa_supplicant.conf
+    udhcpc -b -s /usr/share/udhcpc/default.script -i "${i##*/}"
+done
