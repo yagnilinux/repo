@@ -3,3 +3,6 @@ repo/
 sources/
 yagni.tar.gz
 yagni.tar.gz.sha256
+iso/kbuild/
+yagni.iso
+yagni.iso.sha256

@@ -21,13 +21,14 @@ fetch() {
     mv "$(find "$t" -mindepth 1 -maxdepth 1 -type d | head -n1)" "src/$n"
     rm -rf "$t"
 }
+command -v lzfse >/dev/null || { echo "mkrepo: needs lzfse on the build host (pkgs/lzfse)" >&2; exit 1; }
 mkdir -p repo src
 : > repo/index.tmp
 for d in pkgs/*/; do
     [ -f "$d/build" ] || continue      # work in progress, not a package yet
     n=${d%/} n=${n##*/} v=$(cat "$d/version")
     deps=; [ -f "$d/depends" ] && deps=$(tr '\n' , < "$d/depends" | sed 's/,$//')
-    out=repo/$n@$v.tar.gz
+    out=repo/$n@$v.tar.lzfse
     if [ -f "$out" ] && [ -n "$(find "$d" -newer "$out" | head -n1)" ]; then
         echo "mkrepo: $n changed but is still $v. Bump pkgs/$n/version." >&2; exit 1
     fi
@@ -39,7 +40,7 @@ for d in pkgs/*/; do
         fi
         dest=$(mktemp -d)
         (cd "$dir" && PKG=$ROOT/$d ROOT=$ROOT "$ROOT/$d/build" "$dest")
-        tar czf "$out" -C "$dest" .
+        tar cf - --owner=0 --group=0 --numeric-owner -C "$dest" . | lzfse -encode -o "$out"
         rm -rf "$dest"
         echo "-> $n $v built"
     fi

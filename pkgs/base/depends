@@ -1,5 +1,8 @@
 baselayout
 busybox
 curl
+doas
 jits
 linux
+lzfse
+oksh

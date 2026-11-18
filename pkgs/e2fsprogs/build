@@ -1,0 +1,13 @@
+#!/bin/sh -e
+# mke2fs only, for the install iso
+kh=$(mktemp -d)
+for d in linux asm-generic; do ln -s "/usr/include/$d" "$kh/$d"; done
+ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
+CC="musl-gcc -I$kh" CFLAGS=-Os LDFLAGS=-static ./configure --disable-nls --disable-fuse2fs \
+    --disable-defrag --disable-imager --disable-debugfs --disable-resizer --disable-elf-shlibs >/dev/null
+make -s libs >/dev/null 2>&1
+make -s -C misc mke2fs >/dev/null 2>&1
+strip misc/mke2fs
+install -Dm755 misc/mke2fs "$1/usr/sbin/mke2fs"
+for t in ext2 ext3 ext4; do ln -s mke2fs "$1/usr/sbin/mkfs.$t"; done
+rm -rf "$kh"

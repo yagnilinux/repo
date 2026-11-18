@@ -1,0 +1,4 @@
+#!/bin/sh -e
+# apple's compression. every package is a .tar.lzfse
+musl-gcc -Os -static -s -Isrc src/*.c -o lzfse
+install -Dm755 lzfse "$1/usr/bin/lzfse"

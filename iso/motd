@@ -1,0 +1,8 @@
+
+  yagni live. nothing is installed yet, and nothing will be
+  until you do it. the guide: https://yagnilinux.github.io/install.html
+
+  everything you need is on this iso, no internet required:
+    /media/install/yagni.tar.gz   the base
+    /media/install/repo           wifi and firmware, for jits
+

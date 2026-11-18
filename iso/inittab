@@ -1,0 +1,5 @@
+::sysinit:/etc/init.d/rcS
+::sysinit:/etc/init.d/live
+tty1::respawn:-/usr/bin/oksh
+ttyS0::respawn:-/usr/bin/oksh
+::ctrlaltdel:/sbin/reboot

@@ -1,0 +1,9 @@
+#!/bin/sh -e
+# openbsd's odd tools: signify, jot, rs, lam, vis, calendar
+kh=$(mktemp -d)
+for d in linux asm-generic; do ln -s "/usr/include/$d" "$kh/$d"; done
+ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
+make -s CC=musl-gcc CFLAGS="-Os -I$kh" LDFLAGS="-static -s" >/dev/null
+make -s PREFIX=/usr DESTDIR="$1" install >/dev/null
+rm -rf "$kh"
+rm -f "$1/usr/bin/cksum" "$1/usr/bin/rdate" "$1/usr/share/man/man1/cksum.1" "$1/usr/share/man/man8/rdate.8"    # busybox has these

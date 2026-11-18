@@ -11,9 +11,11 @@ _/\ __)/_)
 ```
 
 a small x86-64 uefi linux distribution, built on [musl libc](https://musl.libc.org) and [busybox](https://busybox.net).
-100% [gnu](https://www.gnu.org) free, everything static.
+1000% [gnu](https://www.gnu.org) free, everything static.
 
 - 14MB base, 7MB download, <12MB ram idle
+- a 37MB iso that installs with no internet
+- openbsd's doas and ksh, freebsd's bc, netbsd's curses, apple's lzfse
 - jits, a <180 line package manager
 - luwm, a <180 line window manager on swc
 - package something in a few minutes
@@ -29,12 +31,15 @@ website, install guide and manual: https://yagnilinux.github.io
 pkgs/        one directory per package
 mkrepo       builds pkgs/ into repo/
 mkrootfs     builds yagni.tar.gz out of repo/
+mkiso        builds yagni.iso: the kernel is BOOTX64.EFI, the live system is inside it
+iso/         the live system's inittab, motd and boot script
 mksrc        collects the source of everything in repo/
 ```
 
 ```sh
 ./mkrepo
 ./mkrootfs
+./mkiso      # as root
 ```
 
 source for every shipped package is on the `sources` branch.
