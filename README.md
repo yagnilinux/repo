@@ -22,7 +22,7 @@ a small x86-64 uefi linux distribution, built on [musl libc](https://musl.libc.o
 
 it has only ever booted in [qemu](https://www.qemu.org).
 
-website, install guide and manual: https://yagnilinux.github.io
+website, install guide and manual: https://yagni-linux.codeberg.page
 
 
 ## layout
