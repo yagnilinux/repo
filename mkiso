@@ -7,7 +7,7 @@ cd "${0%/*}"
 r=$(mktemp -d) e=$(mktemp) s=$(mktemp -d) k=$PWD/src/linux b=$PWD/iso/kbuild
 
 JITS_REPO=file://$PWD/repo sh src/jits/jits -r "$r" a base sfdisk e2fsprogs >/dev/null
-rm -rf "$r/var/db/jits/cache" "$r/var/db/jits/stage" "$r/boot" "$r/lib/modules"
+rm -rf "$r/var/db/jits/cache" "$r/var/db/jits/stage" "$r/boot" "$r/share/modules"
 cp iso/inittab "$r/etc/inittab"
 install -m755 iso/live "$r/etc/init.d/live"
 cp iso/motd "$r/etc/motd"
@@ -18,7 +18,7 @@ mknod -m 600 "$r/dev/console" c 5 1
 mkdir -p "$b"
 cp pkgs/linux/config "$b/.config"
 "$k/scripts/config" --file "$b/.config" --enable BLK_DEV_INITRD \
-    --set-str INITRAMFS_SOURCE "$r" --set-str CMDLINE "rdinit=/sbin/init quiet"
+    --set-str INITRAMFS_SOURCE "$r" --set-str CMDLINE "rdinit=/bin/init firmware_class.path=/share/firmware quiet"
 make -s -C "$k" O="$b" olddefconfig
 rm -f "$b"/usr/initramfs_data.cpio*    # always repack the live system
 make -s -C "$k" O="$b" -j"$(nproc)" bzImage

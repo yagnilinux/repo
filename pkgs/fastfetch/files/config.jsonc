@@ -1,5 +1,5 @@
 {
-  "logo": { "type": "file", "source": "/usr/share/fastfetch/yagni.txt", "color": { "1": "33", "2": "37" }, "padding": { "left": 1, "right": 3 } },
+  "logo": { "type": "file", "source": "/share/fastfetch/yagni.txt", "color": { "1": "33", "2": "37" }, "padding": { "left": 1, "right": 3 } },
   "display": { "separator": " ", "color": { "keys": "1;33", "title": "1;33" }, "key": { "width": 8 } },
   "modules": [
     "title",

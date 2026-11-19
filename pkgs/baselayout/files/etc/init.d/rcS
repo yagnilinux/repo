@@ -14,7 +14,7 @@ dmesg -n 1    # kernel chatter goes to dmesg, not your screen
 ip link set lo up
 
 # refresh module deps
-for m in /lib/modules/*; do [ "$m/modules.dep" -nt "$m/modules.dep.bb" ] && rm -f "$m/modules.dep.bb"; done
+for m in /share/modules/*; do [ "$m/modules.dep" -nt "$m/modules.dep.bb" ] && rm -f "$m/modules.dep.bb"; done
 cat /sys/bus/*/devices/*/modalias 2>/dev/null | sort -u | xargs -n1 modprobe -q 2>/dev/null
 
 # device nodes, hotplug
@@ -28,5 +28,5 @@ if [ -f /etc/wpa_supplicant.conf ] && command -v wpa_supplicant >/dev/null; then
 fi
 
 for i in /sys/class/net/e* /sys/class/net/usb* /sys/class/net/wl*; do
-    [ -e "$i" ] && udhcpc -b -s /usr/share/udhcpc/default.script -i "${i##*/}" >/dev/null 2>&1
+    [ -e "$i" ] && udhcpc -b -s /share/udhcpc/default.script -i "${i##*/}" >/dev/null 2>&1
 done

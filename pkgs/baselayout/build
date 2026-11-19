@@ -4,6 +4,7 @@ mkdir -p "$1"
 cp -a . "$1/"
 cd "$1"
 mkdir -p dev proc sys run tmp root home mnt var/log
+ln -s . usr    # old scripts say #!/usr/bin/env
 chmod 1777 tmp
 chmod 700 root
 chmod 600 etc/shadow

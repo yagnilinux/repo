@@ -1,5 +1,5 @@
 #!/bin/sh -e
 # add a user
 [ "$1" ] || { echo "usage: mkuser name" >&2; exit 1; }
-adduser -s /usr/bin/oksh "$1"
+adduser -s /bin/oksh "$1"
 for g in wheel video input audio; do addgroup "$1" "$g"; done

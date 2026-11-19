@@ -123,7 +123,7 @@ static void drag(void *d, uint32_t t, uint32_t b, uint32_t st) {
 }
 static void ub(void *d, uint32_t t, uint32_t v, uint32_t st) { /* user keys script */
 	char s[192], i = (intptr_t)d;
-	snprintf(s, sizeof s, "k=${LUWM_KEYS:-$HOME/.config/luwm/keys}; [ -f \"$k\" ] || k=/usr/share/luwm/keys; exec sh \"$k\" %s%c", i & 1 ? "S-" : "", KS[i / 2]);
+	snprintf(s, sizeof s, "k=${LUWM_KEYS:-$HOME/.config/luwm/keys}; [ -f \"$k\" ] || k=/share/luwm/keys; exec sh \"$k\" %s%c", i & 1 ? "S-" : "", KS[i / 2]);
 	if (st) run((A){.s = s});
 }
 static void flip(void *d, uint32_t t, uint32_t b, uint32_t st) { C *c; if (st && (c = under())) back(c); }

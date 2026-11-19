@@ -21,6 +21,25 @@ fetch() {
     mv "$(find "$t" -mindepth 1 -maxdepth 1 -type d | head -n1)" "src/$n"
     rm -rf "$t"
 }
+# one bin, one share
+# nothing in /usr /lib /sbin
+flatten() (
+    cd "$1"
+    [ "$(readlink usr)" = . ] && u= || u=usr    # baselayout's usr -> .
+    for s in ${u:+usr/bin usr/sbin} sbin; do
+        [ -d "$s" ] || continue
+        for f in "$s"/* "$s"/.[!.]*; do [ -e "$f" ] || [ -h "$f" ] || continue
+            [ -e "bin/${f##*/}" ] && { echo "mkrepo: $2 has /$f and /bin/${f##*/}" >&2; exit 1; }
+        done
+        mkdir -p bin && cp -a "$s/." bin/ && rm -rf "$s"
+    done
+    [ "$u" ] && [ -d usr/share ] && mkdir -p share && cp -a usr/share/. share/ && rm -rf usr/share
+    [ "$u" ] && { rmdir usr 2>/dev/null || :; }
+    for x in $u lib lib64 sbin libexec; do
+        [ -e "$x" ] && { echo "mkrepo: $2 installs into /$x" >&2; exit 1; }
+    done
+    :
+)
 command -v lzfse >/dev/null || { echo "mkrepo: needs lzfse on the build host (pkgs/lzfse)" >&2; exit 1; }
 mkdir -p repo src
 : > repo/index.tmp
@@ -40,6 +59,7 @@ for d in pkgs/*/; do
         fi
         dest=$(mktemp -d)
         (cd "$dir" && PKG=$ROOT/$d ROOT=$ROOT "$ROOT/$d/build" "$dest")
+        flatten "$dest" "$n"
         tar cf - --owner=0 --group=0 --numeric-owner -C "$dest" . | lzfse -encode -o "$out"
         rm -rf "$dest"
         echo "-> $n $v built"

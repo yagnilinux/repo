@@ -18,16 +18,16 @@ v=$(cat "$PKG/version") v=${v%.*}
 grep -q print-multiarch configure && sed -i 's/^    MULTIARCH=$($CC --print-multiarch 2>\/dev\/null)/    MULTIARCH=/' configure
 [ -f Makefile ] || CC=musl-gcc CFLAGS="-Os -I$K" LDFLAGS="-static" LINKFORSHARED=" " MODULE_BUILDTYPE=static \
     PKG_CONFIG_LIBDIR=/nonexistent ZLIB_CFLAGS="-I$P/include" ZLIB_LIBS="-L$P/lib -lz" \
-    ./configure -q --prefix=/usr --disable-shared --with-openssl="$L" --with-openssl-rpath=no \
+    ./configure -q --prefix=/ --libdir=/share --with-platlibdir=share --disable-shared --with-openssl="$L" --with-openssl-rpath=no \
     --without-ensurepip --disable-test-modules >/dev/null 2>&1
 make -s -j"$(nproc)" >/dev/null 2>&1
 make -s DESTDIR="$1" install >/dev/null 2>&1
 
 # drop tests and tk
-cd "$1/usr"
-rm -rf include share lib/pkgconfig lib/libpython*.a bin/idle* bin/pydoc* bin/python3*-config bin/2to3*
-cd "lib/python$v"
+cd "$1"
+rm -rf include lib share/man share/pkgconfig share/libpython* bin/idle* bin/pydoc* bin/python3*-config bin/2to3*
+cd "share/python$v"
 rm -rf test idlelib tkinter turtledemo ensurepip lib2to3 pydoc_data config-* turtle.py
 find . -name __pycache__ -prune -exec rm -rf {} +
-strip "$1/usr/bin/python$v"
-ln -sf "python$v" "$1/usr/bin/python"
+strip "$1/bin/python$v"
+ln -sf "python$v" "$1/bin/python"

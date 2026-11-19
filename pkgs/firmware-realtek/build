@@ -1,4 +1,4 @@
 #!/bin/sh -e
 # rtw88/rtw89 wifi only
-mkdir -p "$1/lib/firmware"
-cp -rL lib/firmware/rtw88 lib/firmware/rtw89 "$1/lib/firmware/"
+mkdir -p "$1/share/firmware"
+cp -rL lib/firmware/rtw88 lib/firmware/rtw89 "$1/share/firmware/"

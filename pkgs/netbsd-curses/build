@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # netbsd's curses and terminfo, no ncurses here
-m="make -s CC=musl-gcc HOSTCC=cc CFLAGS=-Os LDFLAGS=-static PREFIX=/usr DESTDIR=$1"
+m="make -s CC=musl-gcc HOSTCC=cc CFLAGS=-Os LDFLAGS=-static PREFIX=/usr LIBDIR=/share/lib INCDIR=/share/include DESTDIR=$1"
 $m libterminfo/libterminfo.a libcurses/libcurses.a libpanel/libpanel.a libmenu/libmenu.a libform/libform.a tput/tput tset/tset >/dev/null
 $m install-stalibs install-headers install-tput install-tset install-pcs >/dev/null
 rm -f "$1/usr/bin/clear" "$1/usr/bin/reset"    # busybox has these

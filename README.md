@@ -10,8 +10,8 @@ _/\ __)/_)
 \/-____\/
 ```
 
-a small x86-64 uefi linux distribution, built on [musl libc](https://musl.libc.org) and [busybox](https://busybox.net).
-1000% [gnu](https://www.gnu.org) free, everything static.
+a statically linked x86-64 linux distribution using [musl libc](https://musl.libc.org) and [busybox](https://busybox.net).
+no dynamic loader, no /lib, no /sbin. 1000% [gnu](https://www.gnu.org) free.
 
 - 14MB base, 7MB download, <12MB ram idle
 - a 37MB iso that installs with no internet

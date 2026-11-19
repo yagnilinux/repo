@@ -6,5 +6,7 @@ ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
 sed "s|@KH@|$kh|" "$PKG/config" > .config
 make -s oldconfig </dev/null >/dev/null
 make -j"$(nproc)" CC=musl-gcc >/dev/null
-make CC=musl-gcc CONFIG_PREFIX="$1" install >/dev/null
-rm -rf "$1/linuxrc" "$kh"
+install -Dm755 busybox "$1/bin/busybox"
+# every applet in /bin
+./busybox --list | grep -vx busybox | while read -r a; do ln -s busybox "$1/bin/$a"; done
+rm -rf "$kh"
