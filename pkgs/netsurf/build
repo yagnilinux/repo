@@ -19,8 +19,8 @@ fi
 cd "$W"
 # keys, wheel, resize
 grep -q rkey libnsfb/src/surface/wld.c || patch -sp1 < "$PKG/files/wld.patch"
-# one cursor, luwm's
-grep -q "keep luwm" libnsfb/src/surface/wld.c || patch -sp1 < "$PKG/files/cursor.patch"
+# one cursor, deadeye's
+grep -q "keep deadeye" libnsfb/src/surface/wld.c || patch -sp1 < "$PKG/files/cursor.patch"
 rm -rf libnsfb/build-* netsurf/nsfb netsurf/build/*/deps/link*.d inst-framebuffer/build-stamp
 CFLAGS="-Os -I$J/include -I$P/include -I$P/include/freetype2 -I$P/kh" LDFLAGS="-static -s -L$L/lib -L$J/lib -L$P/lib" \
 make TARGET=framebuffer HOST_CC=gcc BUILD_CC=gcc PREFIX=/usr NETSURF_USE_OPENSSL=NO NETSURF_USE_SDL=NO \
