@@ -30,6 +30,7 @@ website, install guide and manual: https://yagni-linux.codeberg.page
 ```
 pkgs/        one directory per package
 superlab     builds pkgs/ into repo/
+cook         builds just the packages you name: ./cook htop
 mkrootfs     builds yagni.tar.gz out of repo/
 mkiso        builds yagni.iso: the kernel is BOOTX64.EFI, the live system is inside it
 iso/         the live system's inittab, motd and boot script

@@ -1,5 +1,5 @@
 #!/bin/sh -e
-# build every package
+# build every package, or the ones named
 # skip built ones
 # changed recipe? bump version
 cd "${0%/*}"
@@ -48,10 +48,13 @@ for d in pkgs/*/; do
     n=${d%/} n=${n##*/} v=$(cat "$d/version")
     deps=; [ -f "$d/depends" ] && deps=$(tr '\n' , < "$d/depends" | sed 's/,$//')
     out=repo/$n@$v.tar.lzfse
-    if [ -f "$out" ] && [ -n "$(find "$d" -newer "$out" | head -n1)" ]; then
+    want=1; [ $# -eq 0 ] || case " $* " in *" $n "*) ;; *) want= ;; esac   # cook names some
+    if [ -z "$want" ]; then
+        [ -f "$out" ] || continue
+    elif [ -f "$out" ] && [ -n "$(find "$d" -newer "$out" | head -n1)" ]; then
         echo "superlab: $n changed but is still $v. Bump pkgs/$n/version." >&2; exit 1
     fi
-    if [ ! -f "$out" ]; then
+    if [ "$want" ] && [ ! -f "$out" ]; then
         dir=$ROOT/$d
         if [ -f "$d/source" ]; then
             [ -d "src/$n" ] || fetch "$n" $(cat "$d/source")

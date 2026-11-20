@@ -5,7 +5,7 @@ P=$ROOT/src/wlprefix
 export PATH="$P/bin:$PATH" PKG_CONFIG="pkg-config --static"
 export PKG_CONFIG_LIBDIR="$P/lib/pkgconfig:$P/share/pkgconfig" PKG_CONFIG_PATH=
 
-# simpledrm, cursor, wallpaper/snap
+# simpledrm, cursor, wallpaper/screenshots
 s=$(mktemp -d)
 cp -a "$ROOT/src/wlsrc/swc/." "$s"
 for p in simpledrm cursor wall; do patch -sp1 -d "$s" < "$PKG/files/$p.patch"; done
@@ -17,7 +17,7 @@ musl-gcc -std=c11 -Os -s -static -I"$s/libswc" -I"$P/kh" -o "$1/usr/bin/luwm" \
 rm -rf "$s"
 strip -o "$1/usr/bin/swc-launch" "$P/bin/swc-launch"
 chmod 4755 "$1/usr/bin/swc-launch" # setuid root
-for f in startw setwall snap; do install -Dm755 "$PKG/files/$f" "$1/usr/bin/$f"; done
+for f in startw setwall deadeye; do install -Dm755 "$PKG/files/$f" "$1/usr/bin/$f"; done
 install -Dm644 "$PKG/files/keys" "$1/usr/share/luwm/keys"
 musl-gcc -Os -s -static -I"$P/include" -o "$1/usr/bin/png" "$PKG/files/png.c" -L"$P/lib" -lz
 
