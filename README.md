@@ -1,4 +1,4 @@
-# redemption/linux
+# sidewinder/linux
 
 ```
     ___
@@ -22,7 +22,7 @@ no dynamic loader, no /lib, no /sbin. 1000% [gnu](https://www.gnu.org) free.
 
 it has only ever booted in [qemu](https://www.qemu.org).
 
-website, install guide and manual: https://redemption-linux.codeberg.page
+website, install guide and manual: https://sidewinder-linux.codeberg.page
 
 
 ## layout
@@ -30,8 +30,8 @@ website, install guide and manual: https://redemption-linux.codeberg.page
 ```
 pkgs/        one directory per package
 superlab     builds pkgs/ into repo/
-mkrootfs     builds redemption.tar.gz out of repo/
-mkiso        builds redemption.iso: the kernel is BOOTX64.EFI, the live system is inside it
+mkrootfs     builds sidewinder.tar.gz out of repo/
+mkiso        builds sidewinder.iso: the kernel is BOOTX64.EFI, the live system is inside it
 iso/         the live system's inittab, motd and boot script
 mksrc        collects the source of everything in repo/
 ```

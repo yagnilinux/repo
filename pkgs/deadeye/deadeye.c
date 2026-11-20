@@ -19,7 +19,7 @@ static void run(A), end(A), quit(A), show(A), mv(A), cyc(A), fs(A);
 /* config */
 #define MOD SWC_MOD_LOGO
 #define SH SWC_MOD_SHIFT
-static unsigned BW = 3, BF = 0x3d6fa3, BU = 0x253e5b; /* DEADEYE_* overrides */
+static unsigned BW = 3, BF = 0xc9c9c6, BU = 0x494949; /* DEADEYE_* overrides */
 #define W(k, n) {MOD, k, show, {.i = n}}, {MOD | SH, k, mv, {.i = n}}
 static const K keys[] = {
 	{MOD, XKB_KEY_Return, run, {.s = "eval exec ${TERMINAL:-havoc}"}},

@@ -1,8 +1,8 @@
 src/
 repo/
 sources/
-redemption.tar.gz
-redemption.tar.gz.sha256
+sidewinder.tar.gz
+sidewinder.tar.gz.sha256
 iso/kbuild/
-redemption.iso
-redemption.iso.sha256
+sidewinder.iso
+sidewinder.iso.sha256

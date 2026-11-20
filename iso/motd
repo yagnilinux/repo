@@ -1,8 +1,8 @@
 
-  redemption live. nothing is installed yet, and nothing will be
-  until you do it. the plan: https://redemption-linux.codeberg.page/install.html
+  sidewinder live. nothing is installed yet, and nothing will be
+  until you do it. the plan: https://sidewinder-linux.codeberg.page/install.html
 
   everything you need is on this iso, no internet required:
-    /media/install/redemption.tar.gz   the base
+    /media/install/sidewinder.tar.gz   the base
     /media/install/repo                wifi and firmware, for cook
 

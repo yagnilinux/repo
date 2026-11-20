@@ -2,7 +2,7 @@
 # find the disc or stick we booted from
 mkdir -p /media
 for i in 1 2 3 4 5 6 7 8 9 10; do
-    d=$(findfs LABEL=REDEMPTION 2>/dev/null) && mount -t iso9660 -o ro "$d" /media && exit 0
+    d=$(findfs LABEL=SIDEWINDER 2>/dev/null) && mount -t iso9660 -o ro "$d" /media && exit 0
     sleep 1
 done
-echo "couldn't find the redemption iso. /media is empty." >&2
+echo "couldn't find the sidewinder iso. /media is empty." >&2

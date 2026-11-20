@@ -3,7 +3,7 @@
 # the kernel is BOOTX64.EFI and the live system is built into it.
 # needs root (for /dev/console), xorriso and mtools.
 cd "${0%/*}"
-[ -f redemption.tar.gz ] || ./mkrootfs
+[ -f sidewinder.tar.gz ] || ./mkrootfs
 r=$(mktemp -d) e=$(mktemp) s=$(mktemp -d) k=$PWD/src/linux b=$PWD/iso/kbuild
 
 COOK_REPO=file://$PWD/repo sh src/cook/cook -r "$r" a base sfdisk e2fsprogs >/dev/null
@@ -11,7 +11,7 @@ rm -rf "$r/var/db/cook/cache" "$r/var/db/cook/stage" "$r/boot" "$r/share/modules
 cp iso/inittab "$r/etc/inittab"
 install -m755 iso/live "$r/etc/init.d/live"
 cp iso/motd "$r/etc/motd"
-echo redemption-live > "$r/etc/hostname"
+echo sidewinder-live > "$r/etc/hostname"
 mknod -m 600 "$r/dev/console" c 5 1
 
 # same kernel and config, plus the live system inside it
@@ -25,7 +25,7 @@ make -s -C "$k" O="$b" -j"$(nproc)" bzImage
 
 # the disc: base tarball and an offline repo for wifi
 mkdir -p "$s/install/repo"
-cp redemption.tar.gz redemption.tar.gz.sha256 "$s/install/"
+cp sidewinder.tar.gz sidewinder.tar.gz.sha256 "$s/install/"
 for p in wpa_supplicant firmware-iwlwifi firmware-realtek yutils; do
     grep "^$p " repo/index >> "$s/install/repo/index"
     cp repo/"$p"@*.tar.lzfse "$s/install/repo/"
@@ -37,9 +37,9 @@ dd if=/dev/zero of="$e" bs=1K count=$(( $(wc -c < "$img") / 1024 + 512 )) 2>/dev
 mformat -i "$e" ::
 mmd -i "$e" ::/EFI ::/EFI/BOOT
 mcopy -i "$e" "$img" ::/EFI/BOOT/BOOTX64.EFI
-xorriso -as mkisofs -o redemption.iso -V REDEMPTION -R -J \
+xorriso -as mkisofs -o sidewinder.iso -V SIDEWINDER -R -J \
     -append_partition 2 0xef "$e" \
     -e --interval:appended_partition_2:all:: -no-emul-boot "$s" 2>/dev/null
-sha256sum redemption.iso > redemption.iso.sha256
+sha256sum sidewinder.iso > sidewinder.iso.sha256
 rm -rf "$r" "$e" "$s"
-echo "-> redemption.iso $(wc -c < redemption.iso) bytes"
+echo "-> sidewinder.iso $(wc -c < sidewinder.iso) bytes"

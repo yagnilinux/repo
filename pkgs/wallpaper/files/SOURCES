@@ -1,16 +1,17 @@
 wallpapers: edited cc0 photos
 source: github.com/cslr/cc0pictures (unsplash.com, CC0)
-edits: cropped to 1920x1080 (labels kept 150px in, for 16:10),
-gradient-mapped to one blue ramp, dithered; some labelled
-(DejaVu, kirsch, IM Fell English; free fonts)
+edits: greyscale, cropped to 1920x1080, mapped to five concrete greys
+(#f4f4f2 #c9c9c6 #8e8e8b #494949 #1c1c1c), dithered; some labelled
+(DejaVu, IM Fell English; free fonts)
 
-building.png  photo-1461409971633-aa0e46732112  blue
-rock.png      photo-1432383079404-c66efb4828a3  blue
-tide.png      photo-1421749810611-438cc492b581  blue, IM Fell label
-stacks.png    photo-1449960238630-7e720e630019  pale blue
-fog.png       photo-1452716726610-30ed68426a6b  deep blue, kirsch label
-hall.png      photo-1453282716202-de94e528067c  cerulean, crushed
-block.png     photo-1460574283810-2aab119d8511  1-bit, sand slogan
-cabin.png     photo-1447877085163-3cce903855cd  slate
-dusk.png      photo-1451431487663-470c5380d27c  violet blue
-stipple.png   none: 2x2 checker, tiles
+slab.png       photo-1453106037972-08fbfe790762
+balconies.png  photo-1453498798285-d5a1be7fab6e
+block.png      photo-1460574283810-2aab119d8511  slogan
+building.png   photo-1461409971633-aa0e46732112
+grid.png       photo-1463778996521-da8b6f00dacf
+tower.png      photo-1465417001205-3e465bfad702  label
+court.png      photo-1465424365847-61f79d8b6435
+underside.png  photo-1468930605463-659a967fc4e8
+chevron.png    photo-1469614369149-4f0c1468c331
+well.png       photo-1469719847081-4757697d117a
+stipple.png    none: 2x2 checker, tiles

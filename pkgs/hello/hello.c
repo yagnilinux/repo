@@ -1,2 +1,2 @@
 #include <unistd.h>
-int main(void) { return write(1, "hello from redemption\n", 22) != 22; }
+int main(void) { return write(1, "hello from sidewinder\n", 22) != 22; }

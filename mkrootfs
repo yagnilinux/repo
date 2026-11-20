@@ -4,7 +4,7 @@ cd "${0%/*}"
 r=$(mktemp -d) && chmod 755 "$r"    # tar puts this mode on the target
 COOK_REPO=file://$PWD/repo sh src/cook/cook -r "$r" a base >/dev/null
 rm -rf "$r/var/db/cook/cache" "$r/var/db/cook/stage"
-tar czf redemption.tar.gz --numeric-owner -C "$r" .
-sha256sum redemption.tar.gz > redemption.tar.gz.sha256
+tar czf sidewinder.tar.gz --numeric-owner -C "$r" .
+sha256sum sidewinder.tar.gz > sidewinder.tar.gz.sha256
 rm -rf "$r"
-echo "-> redemption.tar.gz $(wc -c < redemption.tar.gz) bytes"
+echo "-> sidewinder.tar.gz $(wc -c < sidewinder.tar.gz) bytes"
