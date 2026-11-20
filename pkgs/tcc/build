@@ -3,12 +3,12 @@
 # needs musl-dev
 # static by default, there is no loader to link against
 # 0.9.27 static output segfaults on musl 1.2, so mob
-grep -q 'static_link = 1; /\* yagni' libtcc.c ||
-    sed -i 's|^    s->nocommon = 1;|&\n    s->static_link = 1; /* yagni */|' libtcc.c
+grep -q 'static_link = 1; /\* redemption' libtcc.c ||
+    sed -i 's|^    s->nocommon = 1;|&\n    s->static_link = 1; /* redemption */|' libtcc.c
 ./configure --prefix=/ --cc=musl-gcc --config-musl --extra-ldflags="-static -s" \
     --tccdir=/share/tcc --crtprefix=/share/lib \
     --sysincludepaths=/share/tcc/include:/share/include --libpaths=/share/lib:/share/tcc >/dev/null
-# libtcc1 is built by the new tcc, which looks for headers where yagni keeps them
+# libtcc1 is built by the new tcc, which looks for headers where redemption keeps them
 make -s XFLAGS-unx="-B$PWD -I$PWD/include -I/usr/include/x86_64-linux-musl" >/dev/null 2>&1
 install -Dm755 tcc "$1/bin/tcc"
 install -Dm644 libtcc1.a "$1/share/tcc/libtcc1.a"

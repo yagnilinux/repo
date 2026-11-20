@@ -1,5 +1,5 @@
 #!/bin/sh -e
-# static, yagni penguin
+# static, penguin
 sh "$PKG/musl.sh"
 kh=$(mktemp -d)
 for d in linux asm-generic drm; do ln -s "/usr/include/$d" "$kh/$d"; done
@@ -14,6 +14,6 @@ CC=musl-gcc cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel -DBUILD_SHARED_LIBS=OFF \
 make -j"$(nproc)" fastfetch >/dev/null
 strip fastfetch
 install -Dm755 fastfetch "$1/usr/bin/fastfetch"
-install -Dm644 "$PKG/files/logo.txt" "$1/usr/share/fastfetch/yagni.txt"
+install -Dm644 "$PKG/files/logo.txt" "$1/usr/share/fastfetch/redemption.txt"
 install -Dm644 "$PKG/files/config.jsonc" "$1/etc/xdg/fastfetch/config.jsonc"
 rm -rf "$kh"

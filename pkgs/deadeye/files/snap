@@ -1,9 +1,9 @@
 #!/bin/sh
-# screenshot luwm
+# screenshot deadeye
 # png to file/stdout
 r=${XDG_RUNTIME_DIR:-/tmp/run-$(id -u)}/snap.ppm
 rm -f "$r"
-pkill -USR2 -x luwm || { echo "snap: luwm not running" >&2; exit 1; }
+pkill -USR2 -x deadeye || { echo "snap: deadeye not running" >&2; exit 1; }
 i=0
 while [ ! -f "$r" ]; do
     sleep 0.1; i=$((i + 1))

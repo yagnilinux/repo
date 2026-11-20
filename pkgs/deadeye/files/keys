@@ -1,6 +1,6 @@
 #!/bin/sh
 # super+key runs this
-# copy to ~/.config/luwm/keys
+# copy to ~/.config/deadeye/keys
 case $1 in
 p) snap "$HOME/snap-$(date +%Y%m%d-%H%M%S).png" ;; # screenshot
 w) exec ${BROWSER:-netsurf} ;;

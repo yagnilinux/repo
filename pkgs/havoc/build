@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # static wayland terminal
-"$ROOT/pkgs/luwm/wlibs"
+"$ROOT/pkgs/deadeye/wlibs"
 P=$ROOT/src/wlprefix
 export PATH="$P/bin:$PATH" PKG_CONFIG="pkg-config --static"
 export PKG_CONFIG_LIBDIR="$P/lib/pkgconfig:$P/share/pkgconfig" PKG_CONFIG_PATH=

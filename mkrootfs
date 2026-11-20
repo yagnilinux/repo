@@ -2,9 +2,9 @@
 # the install tarball
 cd "${0%/*}"
 r=$(mktemp -d) && chmod 755 "$r"    # tar puts this mode on the target
-JITS_REPO=file://$PWD/repo sh src/jits/jits -r "$r" a base >/dev/null
-rm -rf "$r/var/db/jits/cache" "$r/var/db/jits/stage"
-tar czf yagni.tar.gz --numeric-owner -C "$r" .
-sha256sum yagni.tar.gz > yagni.tar.gz.sha256
+COOK_REPO=file://$PWD/repo sh src/cook/cook -r "$r" a base >/dev/null
+rm -rf "$r/var/db/cook/cache" "$r/var/db/cook/stage"
+tar czf redemption.tar.gz --numeric-owner -C "$r" .
+sha256sum redemption.tar.gz > redemption.tar.gz.sha256
 rm -rf "$r"
-echo "-> yagni.tar.gz $(wc -c < yagni.tar.gz) bytes"
+echo "-> redemption.tar.gz $(wc -c < redemption.tar.gz) bytes"

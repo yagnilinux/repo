@@ -1,7 +1,7 @@
 wallpapers: edited cc0 photos
 source: github.com/cslr/cc0pictures (unsplash.com, CC0)
 edits: cropped to 1920x1080 (labels kept 150px in, for 16:10),
-gradient-mapped to one yagni blue ramp, dithered; some labelled
+gradient-mapped to one blue ramp, dithered; some labelled
 (DejaVu, kirsch, IM Fell English; free fonts)
 
 building.png  photo-1461409971633-aa0e46732112  blue

@@ -1,4 +1,4 @@
-# yagni/linux
+# redemption/linux
 
 ```
     ___
@@ -16,28 +16,28 @@ no dynamic loader, no /lib, no /sbin. 1000% [gnu](https://www.gnu.org) free.
 - 14MB base, 7MB download, <12MB ram idle
 - a 37MB iso that installs with no internet
 - openbsd's doas and ksh, freebsd's bc, netbsd's curses, apple's lzfse
-- jits, a <180 line package manager
-- luwm, a <180 line window manager on swc
+- cook, a <180 line package manager
+- deadeye, a <180 line wayland compositor on swc
 - package something in a few minutes
 
 it has only ever booted in [qemu](https://www.qemu.org).
 
-website, install guide and manual: https://yagni-linux.codeberg.page
+website, install guide and manual: https://redemption-linux.codeberg.page
 
 
 ## layout
 
 ```
 pkgs/        one directory per package
-mkrepo       builds pkgs/ into repo/
-mkrootfs     builds yagni.tar.gz out of repo/
-mkiso        builds yagni.iso: the kernel is BOOTX64.EFI, the live system is inside it
+superlab     builds pkgs/ into repo/
+mkrootfs     builds redemption.tar.gz out of repo/
+mkiso        builds redemption.iso: the kernel is BOOTX64.EFI, the live system is inside it
 iso/         the live system's inittab, motd and boot script
 mksrc        collects the source of everything in repo/
 ```
 
 ```sh
-./mkrepo
+./superlab
 ./mkrootfs
 ./mkiso      # as root
 ```

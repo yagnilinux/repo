@@ -1,7 +1,7 @@
 #!/bin/sh -e
 # static framebuffer netsurf
 # wayland surface, needs curl
-"$ROOT/pkgs/luwm/wlibs"
+"$ROOT/pkgs/deadeye/wlibs"
 P=$ROOT/src/wlprefix J=$ROOT/src/links-libs C=$ROOT/src/curl-libs L=$ROOT/src/netsurf-libs W=$PWD
 [ -f "$J/.done" ] && [ -f "$ROOT/src/curl/lib/.libs/libcurl.a" ] || { echo "netsurf: build links and curl first" >&2; exit 1; }
 export CC=musl-gcc PKG_CONFIG="pkg-config --static" PKG_CONFIG_PATH=

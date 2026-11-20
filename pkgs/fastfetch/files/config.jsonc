@@ -1,5 +1,5 @@
 {
-  "logo": { "type": "file", "source": "/share/fastfetch/yagni.txt", "color": { "1": "33", "2": "37" }, "padding": { "left": 1, "right": 3 } },
+  "logo": { "type": "file", "source": "/share/fastfetch/redemption.txt", "color": { "1": "33", "2": "37" }, "padding": { "left": 1, "right": 3 } },
   "display": { "separator": " ", "color": { "keys": "1;33", "title": "1;33" }, "key": { "width": 8 } },
   "modules": [
     "title",
@@ -7,7 +7,7 @@
     { "type": "host",   "key": "host" },
     { "type": "kernel", "key": "kernel" },
     { "type": "uptime", "key": "uptime" },
-    { "type": "command", "key": "pkgs", "text": "ls /var/db/jits/installed | wc -l" },
+    { "type": "command", "key": "pkgs", "text": "ls /var/db/cook/installed | wc -l" },
     { "type": "memory", "key": "memory", "format": "{used} / {total}" }
   ]
 }

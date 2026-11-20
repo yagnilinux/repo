@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # static python, openssl
-"$ROOT/pkgs/luwm/wlibs"; "$ROOT/pkgs/alsa-utils/alsalib"
+"$ROOT/pkgs/deadeye/wlibs"; "$ROOT/pkgs/alsa-utils/alsalib"
 P=$ROOT/src/wlprefix K=$ROOT/src/alsa-prefix/kh L=$ROOT/src/python-libs W=$PWD
 if [ ! -f "$L/.done" ]; then
     mkdir -p "$L/src"; cd "$L/src"

@@ -1,4 +1,4 @@
-/* luwm: tiny swc wm */
+/* deadeye: tiny swc wm */
 #define _POSIX_C_SOURCE 200809L
 #include <signal.h>
 #include <stdlib.h>
@@ -19,7 +19,7 @@ static void run(A), end(A), quit(A), show(A), mv(A), cyc(A), fs(A);
 /* config */
 #define MOD SWC_MOD_LOGO
 #define SH SWC_MOD_SHIFT
-static unsigned BW = 3, BF = 0x3d6fa3, BU = 0x253e5b; /* LUWM_* overrides */
+static unsigned BW = 3, BF = 0x3d6fa3, BU = 0x253e5b; /* DEADEYE_* overrides */
 #define W(k, n) {MOD, k, show, {.i = n}}, {MOD | SH, k, mv, {.i = n}}
 static const K keys[] = {
 	{MOD, XKB_KEY_Return, run, {.s = "eval exec ${TERMINAL:-havoc}"}},
@@ -123,7 +123,7 @@ static void drag(void *d, uint32_t t, uint32_t b, uint32_t st) {
 }
 static void ub(void *d, uint32_t t, uint32_t v, uint32_t st) { /* user keys script */
 	char s[192], i = (intptr_t)d;
-	snprintf(s, sizeof s, "k=${LUWM_KEYS:-$HOME/.config/luwm/keys}; [ -f \"$k\" ] || k=/share/luwm/keys; exec sh \"$k\" %s%c", i & 1 ? "S-" : "", KS[i / 2]);
+	snprintf(s, sizeof s, "k=${DEADEYE_KEYS:-$HOME/.config/deadeye/keys}; [ -f \"$k\" ] || k=/share/deadeye/keys; exec sh \"$k\" %s%c", i & 1 ? "S-" : "", KS[i / 2]);
 	if (st) run((A){.s = s});
 }
 static void flip(void *d, uint32_t t, uint32_t b, uint32_t st) { C *c; if (st && (c = under())) back(c); }
@@ -168,7 +168,7 @@ int main(void) {
 	if (!(dpy = wl_display_create()) || !(s = wl_display_add_socket_auto(dpy))) return 1;
 	setenv("WAYLAND_DISPLAY", s, 1);
 	if (!swc_initialize(dpy, 0, &mgr)) return 1;
-	BW = ev("LUWM_BORDER", BW, 10), BF = ev("LUWM_FOCUS", BF, 16) | 0xff000000, BU = ev("LUWM_UNFOCUS", BU, 16) | 0xff000000;
+	BW = ev("DEADEYE_BORDER", BW, 10), BF = ev("DEADEYE_FOCUS", BF, 16) | 0xff000000, BU = ev("DEADEYE_UNFOCUS", BU, 16) | 0xff000000;
 	for (int i = 0; i < N(keys); i++)
 		swc_add_binding(SWC_BINDING_KEY, keys[i].m, keys[i].k, key, (void *)(keys + i));
 	for (int i = 0; i < 72; i++) /* after builtins */
