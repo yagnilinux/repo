@@ -17,7 +17,7 @@ diff -ruN na/libnsfb/src/surface/wld.c nb/libnsfb/src/surface/wld.c
  	UNUSED(sx_w);
  	UNUSED(sy_w);
 -	wl_pointer_set_cursor(pointer, serial, NULL, 0, 0); /* we draw ours */
-+	UNUSED(pointer); UNUSED(serial); /* keep deadeye cursor */
++	UNUSED(pointer); UNUSED(serial); /* keep luwm cursor */
  #endif
  }
  

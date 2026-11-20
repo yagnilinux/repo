@@ -1,4 +1,4 @@
-# sidewinder/linux
+# yagni/linux
 
 ```
     ___
@@ -16,13 +16,13 @@ no dynamic loader, no /lib, no /sbin. 1000% [gnu](https://www.gnu.org) free.
 - 14MB base, 7MB download, <12MB ram idle
 - a 37MB iso that installs with no internet
 - openbsd's doas and ksh, freebsd's bc, netbsd's curses, apple's lzfse
-- cook, a <180 line package manager
-- deadeye, a <180 line wayland compositor on swc
+- jits, a <180 line package manager
+- luwm, a <180 line wayland compositor on swc
 - package something in a few minutes
 
 it has only ever booted in [qemu](https://www.qemu.org).
 
-website, install guide and manual: https://sidewinder-linux.codeberg.page
+website, install guide and manual: https://yagni-linux.codeberg.page
 
 
 ## layout
@@ -30,8 +30,8 @@ website, install guide and manual: https://sidewinder-linux.codeberg.page
 ```
 pkgs/        one directory per package
 superlab     builds pkgs/ into repo/
-mkrootfs     builds sidewinder.tar.gz out of repo/
-mkiso        builds sidewinder.iso: the kernel is BOOTX64.EFI, the live system is inside it
+mkrootfs     builds yagni.tar.gz out of repo/
+mkiso        builds yagni.iso: the kernel is BOOTX64.EFI, the live system is inside it
 iso/         the live system's inittab, motd and boot script
 mksrc        collects the source of everything in repo/
 ```

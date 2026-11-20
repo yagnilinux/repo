@@ -1,8 +1,8 @@
 src/
 repo/
 sources/
-sidewinder.tar.gz
-sidewinder.tar.gz.sha256
+yagni.tar.gz
+yagni.tar.gz.sha256
 iso/kbuild/
-sidewinder.iso
-sidewinder.iso.sha256
+yagni.iso
+yagni.iso.sha256

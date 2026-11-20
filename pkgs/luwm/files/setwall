@@ -2,7 +2,7 @@
 # set wallpaper
 # png, ppm or #rrggbb
 # no args: reapply saved
-s=${XDG_CONFIG_HOME:-$HOME/.config}/deadeye/wall
+s=${XDG_CONFIG_HOME:-$HOME/.config}/luwm/wall
 w=${XDG_RUNTIME_DIR:-/tmp/run-$(id -u)}/wall.ppm
 case $1 in
 '') [ -f "$s" ] || exit 0; set -- "$(cat "$s")" ;;
@@ -19,5 +19,5 @@ case $1 in
 esac || { rm -f "$w.tmp"; exit 1; }
 mv "$w.tmp" "$w"
 echo "$1" > "$s" # small, persists
-pkill -USR1 -x deadeye 2>/dev/null
+pkill -USR1 -x luwm 2>/dev/null
 :

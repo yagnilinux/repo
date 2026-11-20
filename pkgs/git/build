@@ -1,7 +1,7 @@
 #!/bin/sh -e
 # static git, https
 # binaries only
-"$ROOT/pkgs/deadeye/wlibs"
+"$ROOT/pkgs/luwm/wlibs"
 P=$ROOT/src/wlprefix C=$ROOT/src/curl B=$ROOT/src/curl-libs
 [ -f "$C/lib/.libs/libcurl.a" ] || { echo "git: build curl first" >&2; exit 1; }
 set -- "$1" CC=musl-gcc prefix=/usr bindir=/bin sharedir=/share mandir=/share/man \

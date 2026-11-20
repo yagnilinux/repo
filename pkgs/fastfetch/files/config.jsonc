@@ -1,12 +1,12 @@
 {
-  "logo": { "type": "file", "source": "/share/fastfetch/sidewinder.txt", "color": { "1": "37", "2": "90" }, "padding": { "left": 1, "right": 3 } },
+  "logo": { "type": "file", "source": "/share/fastfetch/yagni.txt", "color": { "1": "37", "2": "90" }, "padding": { "left": 1, "right": 3 } },
   "display": { "separator": " ", "color": { "keys": "1;37", "title": "1;37" }, "key": { "width": 8 } },
   "modules": [
     "title",
     { "type": "os",     "key": "os" },
     { "type": "kernel", "key": "kernel" },
     { "type": "uptime", "key": "uptime" },
-    { "type": "command", "key": "pkgs", "text": "ls /var/db/cook/installed | wc -l" },
+    { "type": "command", "key": "pkgs", "text": "ls /var/db/jits/installed | wc -l" },
     { "type": "memory", "key": "memory", "format": "{used} / {total}" }
   ]
 }
