@@ -2,7 +2,7 @@ baselayout
 busybox
 curl
 doas
-jits
+introit
 linux
 lzfse
 oksh

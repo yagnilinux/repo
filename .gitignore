@@ -1,8 +1,9 @@
 src/
 repo/
 sources/
-yagni.tar.gz
-yagni.tar.gz.sha256
+requiem.tar.gz
+requiem.tar.gz.sha256
 iso/kbuild/
-yagni.iso
-yagni.iso.sha256
+requiem.iso
+requiem.iso.sha256
+cc/sysroot/

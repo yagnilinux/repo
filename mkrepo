@@ -4,6 +4,9 @@
 # changed recipe? bump version
 cd "${0%/*}"
 ROOT=$PWD
+# clang, lld, compiler-rt. no gcc anywhere
+export PATH=$ROOT/cc:$PATH AR=llvm-ar RANLIB=llvm-ranlib STRIP=llvm-strip NM=llvm-nm
+[ -f cc/sysroot/usr/lib/libc.a ] || cc/mksysroot
 
 # fetch name kind args...
 #   shallow clone
@@ -29,18 +32,18 @@ flatten() (
     for s in ${u:+usr/bin usr/sbin} sbin; do
         [ -d "$s" ] || continue
         for f in "$s"/* "$s"/.[!.]*; do [ -e "$f" ] || [ -h "$f" ] || continue
-            [ -e "bin/${f##*/}" ] && { echo "superlab: $2 has /$f and /bin/${f##*/}" >&2; exit 1; }
+            [ -e "bin/${f##*/}" ] && { echo "mkrepo: $2 has /$f and /bin/${f##*/}" >&2; exit 1; }
         done
         mkdir -p bin && cp -a "$s/." bin/ && rm -rf "$s"
     done
     [ "$u" ] && [ -d usr/share ] && mkdir -p share && cp -a usr/share/. share/ && rm -rf usr/share
     [ "$u" ] && { rmdir usr 2>/dev/null || :; }
     for x in $u lib lib64 sbin libexec; do
-        [ -e "$x" ] && { echo "superlab: $2 installs into /$x" >&2; exit 1; }
+        [ -e "$x" ] && { echo "mkrepo: $2 installs into /$x" >&2; exit 1; }
     done
     :
 )
-command -v lzfse >/dev/null || { echo "superlab: needs lzfse on the build host (pkgs/lzfse)" >&2; exit 1; }
+command -v lzfse >/dev/null || { echo "mkrepo: needs lzfse on the build host (pkgs/lzfse)" >&2; exit 1; }
 mkdir -p repo src
 : > repo/index.tmp
 for d in pkgs/*/; do
@@ -48,11 +51,11 @@ for d in pkgs/*/; do
     n=${d%/} n=${n##*/} v=$(cat "$d/version")
     deps=; [ -f "$d/depends" ] && deps=$(tr '\n' , < "$d/depends" | sed 's/,$//')
     out=repo/$n@$v.tar.lzfse
-    want=1; [ $# -eq 0 ] || case " $* " in *" $n "*) ;; *) want= ;; esac   # cook names some
+    want=1; [ $# -eq 0 ] || case " $* " in *" $n "*) ;; *) want= ;; esac   # mkpkg names some
     if [ -z "$want" ]; then
         [ -f "$out" ] || continue
     elif [ -f "$out" ] && [ -n "$(find "$d" -newer "$out" | head -n1)" ]; then
-        echo "superlab: $n changed but is still $v. Bump pkgs/$n/version." >&2; exit 1
+        echo "mkrepo: $n changed but is still $v. Bump pkgs/$n/version." >&2; exit 1
     fi
     if [ "$want" ] && [ ! -f "$out" ]; then
         dir=$ROOT/$d
@@ -60,14 +63,19 @@ for d in pkgs/*/; do
             [ -d "src/$n" ] || fetch "$n" $(cat "$d/source")
             dir=$ROOT/src/$n
         fi
-        dest=$(mktemp -d)
+        dest=$(mktemp -d) && chmod 755 "$dest"   # mktemp makes 0700, which tar would ship
         (cd "$dir" && PKG=$ROOT/$d ROOT=$ROOT "$ROOT/$d/build" "$dest")
         flatten "$dest" "$n"
+        if [ -f "$d/app" ]; then        # an app ships as one folder
+            a=$(mktemp -d) && chmod 755 "$a" && mkdir "$a/$n" && cp -a "$dest/." "$a/$n/" && echo "$v" > "$a/$n/version"
+            rm -rf "$dest" && dest=$a
+        fi
         tar cf - --owner=0 --group=0 --numeric-owner -C "$dest" . | lzfse -encode -o "$out"
         rm -rf "$dest"
         echo "-> $n $v built"
     fi
-    sum=-; [ -z "$SUMS" ] || sum=$(sha256sum < "$out")   # SUMS=1 ./superlab to ship sums
-    echo "$n $v ${sum%% *} ${deps:--}" >> repo/index.tmp
+    sum=-; [ -z "$SUMS" ] || sum=$(sha256sum < "$out")   # SUMS=1 ./mkrepo to ship sums
+    app=; [ -f "$d/app" ] && app=" app"
+    echo "$n $v ${sum%% *} ${deps:--}$app" >> repo/index.tmp
 done
 mv repo/index.tmp repo/index

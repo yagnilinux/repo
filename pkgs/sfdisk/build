@@ -5,13 +5,13 @@ kh=$(mktemp -d) nc=$(mktemp -d)
 for d in linux asm-generic; do ln -s "/usr/include/$d" "$kh/$d"; done
 ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
 lzfse -decode -i "$(ls "$ROOT"/repo/netbsd-curses@*.tar.lzfse | tail -n1)" | tar xf - -C "$nc"
-cp "$nc/usr/lib/libterminfo.a" "$nc/usr/lib/libtinfo.a"
-PKG_CONFIG_PATH=$nc/usr/lib/pkgconfig PKG_CONFIG_SYSROOT_DIR=$nc CC="musl-gcc -I$kh -I$nc/usr/include" \
-CFLAGS=-Os LDFLAGS="-static -L$nc/usr/lib" ./configure --disable-all-programs --enable-fdisks \
+cp "$nc/share/lib/libterminfo.a" "$nc/share/lib/libtinfo.a"
+PKG_CONFIG_PATH=$nc/share/lib/pkgconfig PKG_CONFIG_SYSROOT_DIR=$nc CC="musl-cc -I$kh -I$nc/share/include" \
+CFLAGS=-Os LDFLAGS="-static -L$nc/share/lib" ./configure --disable-all-programs --enable-fdisks \
     --enable-libfdisk --enable-libuuid --enable-libblkid --enable-libsmartcols --disable-shared \
     --enable-static --with-ncursesw --without-readline --without-systemd --without-udev \
     --without-python --disable-nls --disable-bash-completion --disable-asciidoc >/dev/null
-make -s sfdisk LDFLAGS="-all-static -L$nc/usr/lib" >/dev/null 2>&1
+make -s sfdisk LDFLAGS="-all-static -L$nc/share/lib" >/dev/null 2>&1
 strip sfdisk
 install -Dm755 sfdisk "$1/usr/sbin/sfdisk"
 rm -rf "$kh" "$nc"

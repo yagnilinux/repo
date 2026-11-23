@@ -1,3 +1,5 @@
 export PATH=/bin
+# apps: one folder each. outside ~/apps or /apps, not installed
+for a in "$HOME"/apps/*/bin /apps/*/bin; do [ -d "$a" ] && PATH=$a:$PATH; done
 export PS1='-> '
 cat /etc/motd 2>/dev/null

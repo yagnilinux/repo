@@ -2,9 +2,9 @@
 # the install tarball
 cd "${0%/*}"
 r=$(mktemp -d) && chmod 755 "$r"    # tar puts this mode on the target
-JITS_REPO=file://$PWD/repo sh src/jits/jits -r "$r" a base >/dev/null
-rm -rf "$r/var/db/jits/cache" "$r/var/db/jits/stage"
-tar czf yagni.tar.gz --numeric-owner -C "$r" .
-sha256sum yagni.tar.gz > yagni.tar.gz.sha256
+INTROIT_REPO=file://$PWD/repo sh src/introit/introit -r "$r" a base >/dev/null
+rm -rf "$r/var/db/introit/cache" "$r/var/db/introit/stage"
+tar czf requiem.tar.gz --numeric-owner -C "$r" .
+sha256sum requiem.tar.gz > requiem.tar.gz.sha256
 rm -rf "$r"
-echo "-> yagni.tar.gz $(wc -c < yagni.tar.gz) bytes"
+echo "-> requiem.tar.gz $(wc -c < requiem.tar.gz) bytes"

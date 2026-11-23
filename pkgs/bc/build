@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # freebsd's bc and dc
-CC=musl-gcc CFLAGS=-Os LDFLAGS="-static -s" PREFIX=/usr ./configure.sh -G -N >/dev/null
+CC=musl-cc CFLAGS=-Os LDFLAGS="-static -s" PREFIX=/usr ./configure.sh -G -N >/dev/null
 make -s >/dev/null
 make -s DESTDIR="$1" install >/dev/null
 rm -rf "$1/usr/share/locale"

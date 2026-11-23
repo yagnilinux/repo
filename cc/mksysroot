@@ -1,0 +1,11 @@
+#!/bin/sh -e
+# musl and kernel headers for musl-cc, built with clang
+cd "${0%/*}/.."
+s=$PWD/cc/sysroot b=$(mktemp -d)
+rm -rf "$s" && mkdir -p "$s"
+cp -r src/musl-dev/. "$b" && cd "$b"
+CC="clang --target=x86_64-linux-musl" AR=llvm-ar RANLIB=llvm-ranlib ./configure --prefix=/usr --syslibdir=/lib --disable-shared >/dev/null
+make -s -j"$(nproc)" >/dev/null && make -s DESTDIR="$s" install >/dev/null
+cd - >/dev/null && rm -rf "$b"
+h=src/linux-headers && [ -d "$h/usr/include" ] || make -s -C src/linux O="$PWD/$h" LLVM=1 headers >/dev/null
+cp -r "$h"/usr/include/* "$s/usr/include/" && find "$s/usr/include" -name '.*' -delete

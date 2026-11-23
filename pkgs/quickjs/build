@@ -1,5 +1,5 @@
 #!/bin/sh -e
 # static qjs, no cmake
-musl-gcc -O2 -s -static -D_GNU_SOURCE -DQUICKJS_NG_BUILD -o qjs \
+musl-cc -O2 -s -static -D_GNU_SOURCE -DQUICKJS_NG_BUILD -o qjs \
     qjs.c quickjs.c quickjs-libc.c libregexp.c libunicode.c dtoa.c gen/repl.c gen/standalone.c -lm
 install -Dm755 qjs "$1/usr/bin/qjs"

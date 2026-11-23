@@ -1,8 +1,8 @@
 #!/bin/sh -e
 # openbsd's doas. no sudo here
-CC=musl-gcc CFLAGS=-Os ./configure --prefix=/usr --enable-static --without-pam --with-timestamp >/dev/null
+CC=musl-cc CFLAGS=-Os ./configure --prefix=/usr --enable-static --without-pam --with-timestamp >/dev/null
 sed -i 's/-lcrypt//' config.mk
-make -s CC=musl-gcc >/dev/null
+make -s CC=musl-cc >/dev/null
 strip doas
 install -Dm4755 doas "$1/usr/bin/doas"
 install -Dm644 doas.1 "$1/usr/share/man/man1/doas.1"

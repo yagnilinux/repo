@@ -15,7 +15,7 @@ CONFIG_NO_RANDOM_POOL=y
 CONFIG_GETRANDOM=y
 C
 make -s clean >/dev/null 2>&1 || :
-make -j"$(nproc)" CC=musl-gcc EXTRA_CFLAGS="-Os -I$kh" LDFLAGS="-static -s" \
+make -j"$(nproc)" CC=musl-cc EXTRA_CFLAGS="-Os -I$kh" LDFLAGS="-static -s" \
     wpa_supplicant wpa_cli wpa_passphrase >/dev/null
 install -Dm755 wpa_supplicant "$1/usr/sbin/wpa_supplicant"
 install -Dm755 wpa_cli "$1/usr/bin/wpa_cli"

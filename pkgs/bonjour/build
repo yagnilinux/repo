@@ -4,8 +4,8 @@
 kh=$(mktemp -d)
 for d in linux asm-generic; do ln -s "/usr/include/$d" "$kh/$d"; done
 ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
-make -s -C mDNSPosix os=linux tls=no CC="musl-gcc -I$kh" LD=musl-gcc LINKOPTS=-static Daemon >/dev/null
-musl-gcc -Os -static -s -I"$kh" -ImDNSShared -ImDNSCore -D_GNU_SOURCE -DNOT_HAVE_SA_LEN \
+make -s -C mDNSPosix os=linux tls=no CC="musl-cc -I$kh" LD=musl-cc LINKOPTS=-static Daemon >/dev/null
+musl-cc -Os -static -s -I"$kh" -ImDNSShared -ImDNSCore -D_GNU_SOURCE -DNOT_HAVE_SA_LEN \
     Clients/dns-sd.c Clients/ClientCommon.c mDNSShared/dnssd_clientlib.c \
     mDNSShared/dnssd_clientstub.c mDNSShared/dnssd_ipc.c -o dns-sd
 strip mDNSPosix/build/prod/mdnsd

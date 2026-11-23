@@ -3,7 +3,9 @@
 kh=$(mktemp -d)
 for d in linux asm-generic; do ln -s "/usr/include/$d" "$kh/$d"; done
 ln -s /usr/include/x86_64-linux-gnu/asm "$kh/asm"
-CC="musl-gcc -I$kh" CFLAGS=-Os LDFLAGS=-static ./configure --disable-nls --disable-fuse2fs \
+# upstream typo, gcc only warned
+sed -i "s/^#define llseek lseek$/#define my_llseek lseek/" lib/blkid/llseek.c
+CC="musl-cc -I$kh" CFLAGS=-Os LDFLAGS=-static ./configure --disable-nls --disable-fuse2fs \
     --disable-defrag --disable-imager --disable-debugfs --disable-resizer --disable-elf-shlibs >/dev/null
 make -s libs >/dev/null 2>&1
 make -s -C misc mke2fs >/dev/null 2>&1

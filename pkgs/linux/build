@@ -3,9 +3,9 @@
 # built out of tree, mkiso builds from the same source
 b=$ROOT/src/linux-build && mkdir -p "$b"
 cp "$PKG/config" "$b/.config"
-make -s O="$b" olddefconfig
-make O="$b" -j"$(nproc)" bzImage modules >/dev/null
-make -s O="$b" INSTALL_MOD_PATH="$1" INSTALL_MOD_STRIP=1 modules_install >/dev/null
+make -s LLVM=1 O="$b" olddefconfig
+make LLVM=1 O="$b" -j"$(nproc)" bzImage modules >/dev/null
+make -s LLVM=1 O="$b" INSTALL_MOD_PATH="$1" INSTALL_MOD_STRIP=1 modules_install >/dev/null
 rm -f "$1"/lib/modules/*/build "$1"/lib/modules/*/source
 mkdir -p "$1/share" && mv "$1/lib/modules" "$1/share/modules" && rmdir "$1/lib"
 

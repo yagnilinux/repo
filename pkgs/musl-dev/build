@@ -2,11 +2,11 @@
 # libc.a, crt, headers
 # programs link statically.
 # headers and libs in /share
-./configure --prefix=/usr --libdir=/share/lib --includedir=/share/include --syslibdir=/lib >/dev/null
+CC="clang --target=x86_64-linux-musl" AR=llvm-ar RANLIB=llvm-ranlib ./configure --prefix=/usr --libdir=/share/lib --includedir=/share/include --syslibdir=/lib >/dev/null
 make -s -j"$(nproc)" >/dev/null
 make -s DESTDIR="$1" install >/dev/null
 rm -rf "$1/lib" "$1/usr" "$1/share/lib/libc.so" "$1/share/lib/musl-gcc.specs"
 h=$ROOT/src/linux-headers && mkdir -p "$h"
-make -s -C "$ROOT/src/linux" O="$h" headers >/dev/null
+make -s -C "$ROOT/src/linux" O="$h" LLVM=1 headers >/dev/null
 cp -r "$h"/usr/include/* "$1/share/include/"
 find "$1/share/include" ! -name '*.h' -type f -delete

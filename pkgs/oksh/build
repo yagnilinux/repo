@@ -1,6 +1,6 @@
 #!/bin/sh -e
 # openbsd's korn shell
-./configure --prefix=/usr --cc=musl-gcc --cflags=-Os --enable-static --enable-small >/dev/null
+./configure --prefix=/usr --cc=musl-cc --cflags=-Os --enable-static --enable-small >/dev/null
 make -s -j"$(nproc)" >/dev/null
 strip oksh
 install -Dm755 oksh "$1/usr/bin/oksh"
