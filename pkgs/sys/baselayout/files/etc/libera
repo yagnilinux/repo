@@ -1,0 +1,32 @@
+#!/bin/sh
+# libera: the whole boot
+mountpoint -q /dev || mount -t devtmpfs dev /dev
+mount -t proc proc /proc
+mount -t sysfs sys /sys
+mkdir -p /dev/pts /dev/shm
+mount -t devpts devpts /dev/pts
+mount -t tmpfs tmpfs /dev/shm
+mount -t tmpfs tmpfs /run
+mount -o remount,rw /
+mount -a 2>/dev/null
+hostname -F /etc/hostname
+dmesg -n 1    # kernel chatter goes to dmesg, not your screen
+ip link set lo up
+
+# refresh module deps
+for m in /share/modules/*; do [ "$m/modules.dep" -nt "$m/modules.dep.bb" ] && rm -f "$m/modules.dep.bb"; done
+cat /sys/bus/*/devices/*/modalias 2>/dev/null | sort -u | xargs -n1 modprobe -q 2>/dev/null
+
+# device nodes, hotplug
+mdev -s; mdev -d
+
+# wifi, if configured
+if [ -f /etc/wpa_supplicant.conf ] && command -v wpa_supplicant >/dev/null; then
+    for i in /sys/class/net/wl*; do
+        [ -e "$i" ] && wpa_supplicant -B -D wext -i "${i##*/}" -c /etc/wpa_supplicant.conf
+    done
+fi
+
+for i in /sys/class/net/e* /sys/class/net/usb* /sys/class/net/wl*; do
+    [ -e "$i" ] && udhcpc -b -s /share/udhcpc/default.script -i "${i##*/}" >/dev/null 2>&1
+done

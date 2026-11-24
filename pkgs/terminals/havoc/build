@@ -1,0 +1,16 @@
+#!/bin/sh -e
+# static wayland terminal
+"$ROOT/pkgs/desktop/kyrie/wlibs"
+P=$ROOT/src/wlprefix
+export PATH="$P/bin:$PATH" PKG_CONFIG="pkg-config --static"
+export PKG_CONFIG_LIBDIR="$P/lib/pkgconfig:$P/share/pkgconfig" PKG_CONFIG_PATH=
+make -s clean >/dev/null
+# /etc/havoc.cfg fallback
+grep -q /etc/havoc.cfg main.c || sed -i 's|^\tf = fopen(CONF_FILE, "r");$|\tif (!(f = fopen(CONF_FILE, "r"))) f = fopen("/etc/havoc.cfg", "r");|' main.c
+# an app: its default config sits next to it
+grep -q HAVOC_CFG main.c || sed -i 's|f = fopen("/etc/havoc.cfg", "r");|f = fopen(getenv("HAVOC_CFG") ? getenv("HAVOC_CFG") : "/etc/havoc.cfg", "r");|' main.c
+make -s CC=musl-cc CFLAGS=-Os LDFLAGS="-static -s" >/dev/null 2>&1
+install -Dm755 havoc "$1/usr/bin/.havoc"
+install -Dm644 "$PKG/files/havoc.cfg" "$1/usr/share/havoc.cfg"
+printf '#!/bin/sh\nd=$(cd "${0%%/*}/.." && pwd)\nHAVOC_CFG=$d/share/havoc.cfg exec "$d/bin/.havoc" "$@"\n' > "$1/usr/bin/havoc"
+chmod 755 "$1/usr/bin/havoc"

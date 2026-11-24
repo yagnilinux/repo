@@ -6,17 +6,17 @@ cd "${0%/*}"
 [ -f requiem.tar.gz ] || ./mkrootfs
 r=$(mktemp -d) e=$(mktemp) s=$(mktemp -d) k=$PWD/src/linux b=$PWD/iso/kbuild
 
-INTROIT_REPO=file://$PWD/repo sh src/introit/introit -r "$r" a base sfdisk e2fsprogs >/dev/null
+INTROIT_REPO=file://$PWD/repo sh src/introit/introit -r "$r" a sys/base sys/sfdisk sys/e2fsprogs >/dev/null
 rm -rf "$r/var/db/introit/cache" "$r/var/db/introit/stage" "$r/boot" "$r/share/modules"
 cp iso/inittab "$r/etc/inittab"
-install -m755 iso/live "$r/etc/init.d/live"
+install -Dm755 iso/live "$r/etc/init.d/live"
 cp iso/motd "$r/etc/motd"
 echo requiem-live > "$r/etc/hostname"
 mknod -m 600 "$r/dev/console" c 5 1
 
 # same kernel and config, plus the live system inside it
 mkdir -p "$b"
-cp pkgs/linux/config "$b/.config"
+cp pkgs/sys/linux/config "$b/.config"
 "$k/scripts/config" --file "$b/.config" --enable BLK_DEV_INITRD \
     --set-str INITRAMFS_SOURCE "$r" --set-str CMDLINE "rdinit=/bin/init firmware_class.path=/share/firmware quiet"
 make -s -C "$k" LLVM=1 O="$b" olddefconfig
@@ -26,9 +26,9 @@ make -s -C "$k" LLVM=1 O="$b" -j"$(nproc)" bzImage
 # the disc: base tarball and an offline repo for wifi
 mkdir -p "$s/install/repo"
 cp requiem.tar.gz requiem.tar.gz.sha256 "$s/install/"
-for p in wpa_supplicant firmware-iwlwifi firmware-realtek yutils; do
+for p in net/wpa_supplicant firmware/iwlwifi firmware/realtek sys/qoltils; do
     grep "^$p " repo/index >> "$s/install/repo/index"
-    cp repo/"$p"@*.tar.lzfse "$s/install/repo/"
+    cp repo/"$(echo "$p" | tr / .)"@*.tar.lzfse "$s/install/repo/"
 done
 
 # esp with one file in it, then the iso around it

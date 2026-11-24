@@ -46,12 +46,12 @@ flatten() (
 command -v lzfse >/dev/null || { echo "mkrepo: needs lzfse on the build host (pkgs/lzfse)" >&2; exit 1; }
 mkdir -p repo src
 : > repo/index.tmp
-for d in pkgs/*/; do
+for d in pkgs/*/*/; do                 # pkgs/<category>/<name>
     [ -f "$d/build" ] || continue      # work in progress, not a package yet
-    n=${d%/} n=${n##*/} v=$(cat "$d/version")
+    n=${d%/} n=${n#pkgs/} b=${n##*/} v=$(cat "$d/version")
     deps=; [ -f "$d/depends" ] && deps=$(tr '\n' , < "$d/depends" | sed 's/,$//')
-    out=repo/$n@$v.tar.lzfse
-    want=1; [ $# -eq 0 ] || case " $* " in *" $n "*) ;; *) want= ;; esac   # mkpkg names some
+    out=repo/$(echo "$n" | tr / .)@$v.tar.lzfse   # flat, release assets have no dirs
+    want=1; [ $# -eq 0 ] || case " $* " in *" $n "*|*" $b "*) ;; *) want= ;; esac   # mkpkg names some
     if [ -z "$want" ]; then
         [ -f "$out" ] || continue
     elif [ -f "$out" ] && [ -n "$(find "$d" -newer "$out" | head -n1)" ]; then
@@ -60,14 +60,14 @@ for d in pkgs/*/; do
     if [ "$want" ] && [ ! -f "$out" ]; then
         dir=$ROOT/$d
         if [ -f "$d/source" ]; then
-            [ -d "src/$n" ] || fetch "$n" $(cat "$d/source")
-            dir=$ROOT/src/$n
+            [ -d "src/$b" ] || fetch "$b" $(cat "$d/source")
+            dir=$ROOT/src/$b
         fi
         dest=$(mktemp -d) && chmod 755 "$dest"   # mktemp makes 0700, which tar would ship
         (cd "$dir" && PKG=$ROOT/$d ROOT=$ROOT "$ROOT/$d/build" "$dest")
         flatten "$dest" "$n"
         if [ -f "$d/app" ]; then        # an app ships as one folder
-            a=$(mktemp -d) && chmod 755 "$a" && mkdir "$a/$n" && cp -a "$dest/." "$a/$n/" && echo "$v" > "$a/$n/version"
+            a=$(mktemp -d) && chmod 755 "$a" && mkdir "$a/$b" && cp -a "$dest/." "$a/$b/" && echo "$v" > "$a/$b/version"
             rm -rf "$dest" && dest=$a
         fi
         tar cf - --owner=0 --group=0 --numeric-owner -C "$dest" . | lzfse -encode -o "$out"

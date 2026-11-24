@@ -29,9 +29,9 @@ website, install guide and manual: https://requiem-linux.codeberg.page
 ## layout
 
 ```
-pkgs/        one directory per package
+pkgs/        one directory per package, in categories: pkgs/browsers/netsurf
 mkrepo       builds pkgs/ into repo/
-mkpkg        builds just the packages you name: ./mkpkg htop
+mkpkg        builds just the packages you name: ./mkpkg tract
 mkrootfs     builds requiem.tar.gz out of repo/
 mkiso        builds requiem.iso: the kernel is BOOTX64.EFI, the live system is inside it
 cc/          musl-cc: clang against our own musl. cc/gcc is a stub that fails the build

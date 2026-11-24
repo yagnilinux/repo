@@ -2,7 +2,7 @@
 # the install tarball
 cd "${0%/*}"
 r=$(mktemp -d) && chmod 755 "$r"    # tar puts this mode on the target
-INTROIT_REPO=file://$PWD/repo sh src/introit/introit -r "$r" a base >/dev/null
+INTROIT_REPO=file://$PWD/repo sh src/introit/introit -r "$r" a sys/base >/dev/null
 rm -rf "$r/var/db/introit/cache" "$r/var/db/introit/stage"
 tar czf requiem.tar.gz --numeric-owner -C "$r" .
 sha256sum requiem.tar.gz > requiem.tar.gz.sha256
