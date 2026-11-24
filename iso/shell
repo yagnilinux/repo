@@ -1,0 +1,3 @@
+#!/bin/sh
+# a root shell instead of a login. getty makes the tty the shell's terminal
+exec getty -n -l /etc/autologin BAUD TTY

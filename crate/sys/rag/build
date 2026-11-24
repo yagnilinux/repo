@@ -1,0 +1,2 @@
+#!/bin/sh -e
+install -Dm755 rag "$1/usr/bin/rag"

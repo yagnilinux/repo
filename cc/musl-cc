@@ -1,6 +1,6 @@
 #!/bin/sh
 # clang, lld and compiler-rt against our musl. nothing from gcc
-# always static: requiem has no dynamic loader
+# always static: blackout has no dynamic loader
 d=$(cd "${0%/*}" && pwd)
 exec clang --target=x86_64-linux-musl --sysroot="$d/sysroot" -isystem "$d/sysroot/usr/include" \
     --start-no-unused-arguments -static --rtlib=compiler-rt --unwindlib=none -fuse-ld=lld \

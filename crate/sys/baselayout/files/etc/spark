@@ -1,0 +1,49 @@
+#!/bin/sh
+# spark: what s6 runs once it's up. s6-linux-init already mounted /dev and /run
+# spark net: (re)make the network services, wifi calls this
+
+net() {
+    for i in /sys/class/net/e* /sys/class/net/usb* /sys/class/net/wl*; do
+        [ -e "$i" ] || continue
+        i=${i##*/}
+        case $i in wl*)
+            [ -f /etc/wpa_supplicant.conf ] && command -v wpa_supplicant >/dev/null || continue
+            sv "wpa-$i" "exec wpa_supplicant -D wext -i $i -c /etc/wpa_supplicant.conf" ;;
+        esac
+        sv "dhcp-$i" "exec udhcpc -f -s /share/udhcpc/default.script -i $i"
+    done
+    s6-svscanctl -a /run/service
+}
+# a service made at boot, for things that depend on the hardware
+sv() {
+    mkdir -p "/run/sv/$1" && printf '#!/bin/sh\n%s\n' "$2" > "/run/sv/$1/run" && chmod 755 "/run/sv/$1/run"
+    [ -e "/run/service/$1" ] || ln -s "/run/sv/$1" "/run/service/$1"
+}
+
+[ "$1" = net ] && { net; exit; }
+
+mountpoint -q /proc || mount -t proc proc /proc
+mountpoint -q /sys || mount -t sysfs sys /sys
+mkdir -p /dev/pts /dev/shm
+mountpoint -q /dev/pts || mount -t devpts devpts /dev/pts
+mountpoint -q /dev/shm || mount -t tmpfs tmpfs /dev/shm
+mount -o remount,rw /
+mount -a 2>/dev/null
+hostname -F /etc/hostname
+dmesg -n 1    # kernel chatter goes to dmesg, not your screen
+ip link set lo up
+
+# refresh module deps
+for m in /share/modules/*; do [ "$m/modules.dep" -nt "$m/modules.dep.bb" ] && rm -f "$m/modules.dep.bb"; done
+cat /sys/bus/*/devices/*/modalias 2>/dev/null | sort -u | xargs -n1 modprobe -q 2>/dev/null
+
+# device nodes now, hotplug from here on
+mdev -s
+
+# everything in /etc/sv is supervised: gettys, mdev, yours
+for s in /etc/sv/*; do [ -d "$s" ] && ln -s "$s" "/run/service/${s##*/}" 2>/dev/null; done
+net
+
+# anything else, in order
+for f in /etc/spark.d/*; do [ -x "$f" ] && "$f"; done
+:

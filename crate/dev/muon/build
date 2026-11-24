@@ -1,0 +1,7 @@
+#!/bin/sh -e
+# meson in c. bootstraps itself with cc and its own samu
+CC=musl-cc CFLAGS="-Os" ./bootstrap.sh boot
+boot/muon-bootstrap setup -Dlibcurl=disabled -Dlibarchive=disabled -Dlibpkgconf=disabled \
+    -Dbuildtype=release -Dstatic=true out
+boot/muon-bootstrap -C out samu
+install -Dm755 out/muon "$1/usr/bin/muon"

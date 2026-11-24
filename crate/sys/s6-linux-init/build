@@ -1,0 +1,16 @@
+#!/bin/sh -e
+# skarnet's s6-linux-init, static. libs come from the shared prefix
+"$ROOT/crate/sys/s6/skalibs"
+P=$ROOT/src/skaprefix
+CC=musl-cc ./configure --prefix=/usr --libexecdir=/usr/bin --disable-shared --enable-static-libc \
+    --with-sysdeps="$P/usr/lib/skalibs/sysdeps" --with-include="$P/usr/include" --with-lib="$P/usr/lib" >/dev/null
+make -s -j"$(nproc)" >/dev/null
+make -s DESTDIR="$1" install >/dev/null
+find "$1/usr/bin" -type f -exec "${STRIP:-llvm-strip}" {} +   # skarnet doesn't strip
+rm -rf "$1/usr/include" "$1/usr/lib" "$1/usr/etc"
+
+# blackout's boot: s6-linux-init runs rc.init, which is spark
+mkdir -p "$1/etc/s6-linux-init"
+./s6-linux-init-maker -c /etc/s6-linux-init/current -f "$PKG/files/skel" -d /dev -1 -p /bin \
+    "$1/etc/s6-linux-init/current"
+for b in init halt poweroff reboot shutdown telinit; do ln -s "/etc/s6-linux-init/current/bin/$b" "$1/usr/bin/$b"; done

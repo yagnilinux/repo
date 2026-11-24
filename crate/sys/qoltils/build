@@ -1,0 +1,6 @@
+#!/bin/sh -e
+# blackout's own tools
+for f in mkuser etcnew; do install -Dm755 "$PKG/files/$f" "$1/usr/bin/$f"; done
+[ -z "$F_wifi" ] || install -Dm755 "$PKG/files/wifi" "$1/usr/bin/wifi"
+[ -z "$F_vol" ] || install -Dm755 "$PKG/files/vol" "$1/usr/bin/vol"
+[ -z "$F_yt" ] || install -Dm755 "$PKG/files/yt" "$1/usr/bin/yt"

@@ -1,0 +1,3 @@
+#!/bin/sh
+# s6 is up. spark does the rest
+exec /etc/spark

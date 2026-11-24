@@ -1,3 +1,0 @@
-#!/bin/sh -e
-musl-cc -std=c99 -Os -s -static -o tract tract.c
-install -Dm755 tract "$1/usr/bin/tract"

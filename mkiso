@@ -3,20 +3,23 @@
 # the kernel is BOOTX64.EFI and the live system is built into it.
 # needs root (for /dev/console), xorriso and mtools.
 cd "${0%/*}"
-[ -f requiem.tar.gz ] || ./mkrootfs
+[ -f blackout.tar.gz ] || ./mkrootfs
 r=$(mktemp -d) e=$(mktemp) s=$(mktemp -d) k=$PWD/src/linux b=$PWD/iso/kbuild
 
-INTROIT_REPO=file://$PWD/repo sh src/introit/introit -r "$r" a sys/base sys/sfdisk sys/e2fsprogs >/dev/null
-rm -rf "$r/var/db/introit/cache" "$r/var/db/introit/stage" "$r/boot" "$r/share/modules"
-cp iso/inittab "$r/etc/inittab"
-install -Dm755 iso/live "$r/etc/init.d/live"
+RAG_REPO=file://$PWD/repo sh src/rag/rag -r "$r" a sys/base sys/sfdisk sys/e2fsprogs >/dev/null
+rm -rf "$r/var/db/rag/cache" "$r/var/db/rag/stage" "$r/boot" "$r/share/modules"
+# root shells instead of gettys, and find the disc once s6 is up
+sed "s/BAUD/38400/; s/TTY/tty1/" iso/shell > "$r/etc/sv/getty-tty1/run"
+sed "s/BAUD/115200/; s/TTY/ttyS0/" iso/shell > "$r/etc/sv/getty-ttyS0/run"
+install -Dm755 iso/autologin "$r/etc/autologin"
+install -Dm755 iso/live "$r/etc/spark.d/live"
 cp iso/motd "$r/etc/motd"
-echo requiem-live > "$r/etc/hostname"
+echo blackout-live > "$r/etc/hostname"
 mknod -m 600 "$r/dev/console" c 5 1
 
 # same kernel and config, plus the live system inside it
 mkdir -p "$b"
-cp pkgs/sys/linux/config "$b/.config"
+cp crate/sys/linux/config "$b/.config"
 "$k/scripts/config" --file "$b/.config" --enable BLK_DEV_INITRD \
     --set-str INITRAMFS_SOURCE "$r" --set-str CMDLINE "rdinit=/bin/init firmware_class.path=/share/firmware quiet"
 make -s -C "$k" LLVM=1 O="$b" olddefconfig
@@ -25,7 +28,7 @@ make -s -C "$k" LLVM=1 O="$b" -j"$(nproc)" bzImage
 
 # the disc: base tarball and an offline repo for wifi
 mkdir -p "$s/install/repo"
-cp requiem.tar.gz requiem.tar.gz.sha256 "$s/install/"
+cp blackout.tar.gz blackout.tar.gz.sha256 "$s/install/"
 for p in net/wpa_supplicant firmware/iwlwifi firmware/realtek sys/qoltils; do
     grep "^$p " repo/index >> "$s/install/repo/index"
     cp repo/"$(echo "$p" | tr / .)"@*.tar.lzfse "$s/install/repo/"
@@ -37,9 +40,9 @@ dd if=/dev/zero of="$e" bs=1K count=$(( $(wc -c < "$img") / 1024 + 512 )) 2>/dev
 mformat -i "$e" ::
 mmd -i "$e" ::/EFI ::/EFI/BOOT
 mcopy -i "$e" "$img" ::/EFI/BOOT/BOOTX64.EFI
-xorriso -as mkisofs -o requiem.iso -V REQUIEM -R -J \
+xorriso -as mkisofs -o blackout.iso -V BLACKOUT -R -J \
     -append_partition 2 0xef "$e" \
     -e --interval:appended_partition_2:all:: -no-emul-boot "$s" 2>/dev/null
-sha256sum requiem.iso > requiem.iso.sha256
+sha256sum blackout.iso > blackout.iso.sha256
 rm -rf "$r" "$e" "$s"
-echo "-> requiem.iso $(wc -c < requiem.iso) bytes"
+echo "-> blackout.iso $(wc -c < blackout.iso) bytes"

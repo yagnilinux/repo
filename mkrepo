@@ -13,15 +13,15 @@ export PATH=$ROOT/cc:$PATH AR=llvm-ar RANLIB=llvm-ranlib STRIP=llvm-strip NM=llv
 #   ubuntu source, patched
 #   ubuntu binaries, unpacked
 fetch() {
-    n=$1 kind=$2; shift 2
-    t=src/$n.tmp && rm -rf "$t" && mkdir -p "$t"
+    fn=$1 kind=$2; shift 2     # not n: the loop below needs it
+    t=src/$fn.tmp && rm -rf "$t" && mkdir -p "$t"
     case $kind in
         git)     git clone -q --depth 1 --branch "$2" "$1" "$t/x" ;;
         apt-src) (cd "$t" && apt-get source -qq "$@" >/dev/null 2>&1) ;;
         apt-deb) (cd "$t" && apt-get download -qq "$@" 2>/dev/null &&
                   for p in *.deb; do dpkg-deb -x "$p" x; done && rm -f ./*.deb) ;;
     esac
-    mv "$(find "$t" -mindepth 1 -maxdepth 1 -type d | head -n1)" "src/$n"
+    mv "$(find "$t" -mindepth 1 -maxdepth 1 -type d | head -n1)" "src/$fn"
     rm -rf "$t"
 }
 # one bin, one share
@@ -43,19 +43,19 @@ flatten() (
     done
     :
 )
-command -v lzfse >/dev/null || { echo "mkrepo: needs lzfse on the build host (pkgs/lzfse)" >&2; exit 1; }
+command -v lzfse >/dev/null || { echo "mkrepo: needs lzfse on the build host (crate/lzfse)" >&2; exit 1; }
 mkdir -p repo src
 : > repo/index.tmp
-for d in pkgs/*/*/; do                 # pkgs/<category>/<name>
+for d in crate/*/*/; do                 # crate/<category>/<name>
     [ -f "$d/build" ] || continue      # work in progress, not a package yet
-    n=${d%/} n=${n#pkgs/} b=${n##*/} v=$(cat "$d/version")
+    n=${d%/} n=${n#crate/} b=${n##*/} v=$(cat "$d/version")
     deps=; [ -f "$d/depends" ] && deps=$(tr '\n' , < "$d/depends" | sed 's/,$//')
     out=repo/$(echo "$n" | tr / .)@$v.tar.lzfse   # flat, release assets have no dirs
     want=1; [ $# -eq 0 ] || case " $* " in *" $n "*|*" $b "*) ;; *) want= ;; esac   # mkpkg names some
     if [ -z "$want" ]; then
         [ -f "$out" ] || continue
     elif [ -f "$out" ] && [ -n "$(find "$d" -newer "$out" | head -n1)" ]; then
-        echo "mkrepo: $n changed but is still $v. Bump pkgs/$n/version." >&2; exit 1
+        echo "mkrepo: $n changed but is still $v. Bump crate/$n/version." >&2; exit 1
     fi
     if [ "$want" ] && [ ! -f "$out" ]; then
         dir=$ROOT/$d
@@ -64,7 +64,8 @@ for d in pkgs/*/*/; do                 # pkgs/<category>/<name>
             dir=$ROOT/src/$b
         fi
         dest=$(mktemp -d) && chmod 755 "$dest"   # mktemp makes 0700, which tar would ship
-        (cd "$dir" && PKG=$ROOT/$d ROOT=$ROOT "$ROOT/$d/build" "$dest")
+        fl=; [ -f "$d/fuel" ] && fl=$(sed -n 's/^+\([a-z0-9_]*\).*/F_\1=1/p' "$d/fuel")   # built with the defaults
+        (cd "$dir" && env $fl PKG=$ROOT/$d ROOT=$ROOT "$ROOT/$d/build" "$dest")
         flatten "$dest" "$n"
         if [ -f "$d/app" ]; then        # an app ships as one folder
             a=$(mktemp -d) && chmod 755 "$a" && mkdir "$a/$b" && cp -a "$dest/." "$a/$b/" && echo "$v" > "$a/$b/version"
@@ -74,8 +75,16 @@ for d in pkgs/*/*/; do                 # pkgs/<category>/<name>
         rm -rf "$dest"
         echo "-> $n $v built"
     fi
+    # source for bottles a blackout machine can build itself
+    srcout=repo/src.$(echo "$n" | tr / .)@$v.tar.lzfse
+    if [ ! -f "$d/binonly" ] && [ -f "$d/source" ] && [ ! -f "$srcout" ] && [ -d "src/$b" ]; then
+        if [ -e "src/$b/.git" ]; then git -C "src/$b" archive HEAD
+        else tar cf - --exclude=.git -C "src/$b" .; fi | lzfse -encode -o "$srcout"
+    fi
     sum=-; [ -z "$SUMS" ] || sum=$(sha256sum < "$out")   # SUMS=1 ./mkrepo to ship sums
     app=; [ -f "$d/app" ] && app=" app"
     echo "$n $v ${sum%% *} ${deps:--}$app" >> repo/index.tmp
 done
 mv repo/index.tmp repo/index
+# the bottles themselves, for rag u
+tar cf - --owner=0 --group=0 --numeric-owner -C crate . | lzfse -encode -o repo/crate.tar.lzfse

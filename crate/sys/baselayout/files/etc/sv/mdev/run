@@ -1,0 +1,3 @@
+#!/bin/sh
+# hotplug. -f keeps it in front so s6 can watch it
+exec mdev -df

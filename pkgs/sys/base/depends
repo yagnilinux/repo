@@ -1,8 +1,0 @@
-sys/baselayout
-sys/busybox
-net/curl
-sys/doas
-sys/introit
-sys/linux
-sys/lzfse
-sys/oksh

@@ -1,0 +1,18 @@
+#!/bin/sh -e
+# openbsd's man. zlib from barricade's wlibs, for gzipped pages
+"$ROOT/crate/desktop/barricade/wlibs"
+P=$ROOT/src/wlprefix
+cat > configure.local <<EOT
+PREFIX=/usr
+MANDIR=/usr/share/man
+CC=musl-cc
+CFLAGS="-Os -I$P/include"
+LDFLAGS="-static -L$P/lib"
+STATIC=-static
+HAVE_WCHAR=1
+BUILD_CGI=0
+EOT
+./configure >/dev/null
+make -s >/dev/null
+make -s DESTDIR="$1" base-install >/dev/null
+strip "$1"/usr/bin/* 2>/dev/null || :

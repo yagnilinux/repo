@@ -1,0 +1,16 @@
+#!/bin/sh -e
+# skalibs, execline and s6 as static libs, once, in any order mkrepo goes
+P=$ROOT/src/skaprefix
+lib() {    # name tag
+    [ -f "$P/.$1" ] && return
+    S=$ROOT/src/ska-$1
+    [ -d "$S" ] || git clone -q --depth 1 --branch "$2" "https://github.com/skarnet/$1" "$S"
+    # configured for where it runs (/usr is / on blackout), installed into $P
+    (cd "$S" && CC=musl-cc ./configure --prefix=/usr --disable-shared --enable-static \
+        --with-sysdeps="$P/usr/lib/skalibs/sysdeps" --with-include="$P/usr/include" --with-lib="$P/usr/lib" >/dev/null &&
+        make -s -j"$(nproc)" >/dev/null && make -s DESTDIR="$P" install >/dev/null)
+    touch "$P/.$1"
+}
+lib skalibs v2.16.0.0
+lib execline v2.10.0.0
+lib s6 v2.15.1.1

@@ -1,0 +1,19 @@
+#!/bin/sh -e
+# compiler, assembler, linker
+# needs musl-dev
+# static by default, there is no loader to link against
+# 0.9.27 static output segfaults on musl 1.2, so mob
+grep -q 'static_link = 1;' libtcc.c ||
+    sed -i 's|^    s->nocommon = 1;|&\n    s->static_link = 1; /* static by default */|' libtcc.c
+./configure --prefix=/ --cc=musl-cc --config-musl --extra-ldflags="-static -s" \
+    --tccdir=/share/tcc --crtprefix=/share/lib \
+    --sysincludepaths=/share/tcc/include:/share/include --libpaths=/share/lib:/share/tcc >/dev/null
+# libtcc1 is built by the new tcc, which looks for headers where blackout keeps them
+make -s XFLAGS-unx="-B$PWD -I$PWD/include -I$ROOT/cc/sysroot/usr/include" >/dev/null 2>&1
+install -Dm755 tcc "$1/bin/tcc"
+install -Dm644 libtcc1.a "$1/share/tcc/libtcc1.a"
+for o in runmain.o bt-exe.o bt-log.o bcheck.o; do install -m644 "$o" "$1/share/tcc/"; done
+mkdir -p "$1/share/tcc/include" && cp include/*.h "$1/share/tcc/include/"
+# bottles call musl-cc, like they do on the build machine
+install -Dm755 "$PKG/files/musl-cc" "$1/bin/musl-cc"
+ln -s musl-cc "$1/bin/cc"

@@ -1,0 +1,62 @@
+#!/bin/sh -e
+# static wayland stack
+# udev-less libinput, swc
+P=$ROOT/src/wlprefix S=$ROOT/src/wlsrc
+[ -f "$P/.done" ] && exit 0
+mkdir -p "$P" "$S" "$P/kh"
+for d in linux asm-generic drm mtd; do ln -sfn "/usr/include/$d" "$P/kh/$d"; done
+ln -sfn /usr/include/x86_64-linux-gnu/asm "$P/kh/asm"
+
+export PATH="$P/bin:$PATH" CC=musl-cc PKG_CONFIG="pkg-config --static"
+export PKG_CONFIG_LIBDIR="$P/lib/pkgconfig:$P/lib64/pkgconfig:$P/share/pkgconfig" PKG_CONFIG_PATH=
+export CFLAGS="-Os -fPIC -D_LARGEFILE64_SOURCE -I$P/include -I$P/kh" CPPFLAGS="-I$P/include" LDFLAGS="-L$P/lib -L$P/lib64"
+
+src() { cd "$S"; [ -d "$(ls -d "$1"-[0-9]*/ 2>/dev/null | head -n1)" ] || apt-get source -qq "$1" >/dev/null 2>&1; cd "$S/$(ls -d "$1"-[0-9]*/ | head -n1)"; }
+at() { [ -x configure ] || autoreconf -fi >/dev/null 2>&1; ./configure -q --prefix="$P" --enable-static --disable-shared "$@" >/dev/null; make -s -j"$(nproc)" install >/dev/null; }
+ms() { rm -rf build; meson setup build --prefix="$P" --libdir=lib --default-library=static "$@" >/dev/null; ninja -C build install >/dev/null; }
+
+src zlib;       ./configure --prefix="$P" --static >/dev/null; make -s -j"$(nproc)" install >/dev/null
+cd "$S"
+if [ ! -d libffi-3.4.6 ]; then
+    curl -sfL -o ffi.tar.gz https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
+    echo "b0dea9df23c863a7a50e825440f3ebffabd65df1497108e5d437747843895a4e  ffi.tar.gz" | sha256sum -c >/dev/null
+    tar xzf ffi.tar.gz && rm ffi.tar.gz
+fi
+cd "$S/libffi-3.4.6"; at --disable-docs --disable-multi-os-directory
+src expat;      cd expat; ./buildconf.sh >/dev/null 2>&1; at --without-docbook --without-examples --without-tests
+src wayland;    ms -Ddocumentation=false -Dtests=false -Ddtd_validation=false
+src wayland-protocols; ms -Dtests=false
+src pixman;     ms -Dtests=disabled -Dgtk=disabled -Dlibpng=disabled -Dopenmp=disabled
+src freetype;   at --with-zlib=yes --with-png=no --with-harfbuzz=no --with-brotli=no --with-bzip2=no
+src fontconfig; at --disable-docs --disable-cache-build --sysconfdir=/etc --localstatedir=/var
+src libdrm;     ms -Dintel=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled -Dvmwgfx=disabled \
+                   -Dcairo-tests=disabled -Dman-pages=disabled -Dvalgrind=disabled -Dtests=false -Dudev=false
+# keymaps where barricade ships them, not the build path
+src libxkbcommon; ms -Dxkb-config-root=/share/barricade/xkb -Denable-x11=false -Denable-docs=false -Denable-wayland=false -Denable-xkbregistry=false
+# regen autotools files
+src mtdev;      autoreconf -fi >/dev/null 2>&1; at
+src libevdev;   autoreconf -fi >/dev/null 2>&1
+                ./configure -q --prefix="$P" --enable-static --disable-shared >/dev/null
+                make -s -C libevdev -j"$(nproc)" install >/dev/null; make -s install-pkgconfigDATA >/dev/null
+
+# pinned udev-less fork
+cd "$S"
+if [ ! -d libinput ]; then
+    git init -q libinput && cd libinput
+    git fetch -q --depth 1 https://github.com/oasislinux/libinput 077c93e5875426e3c6414ade1073cc107d53f142
+    git checkout -q FETCH_HEAD
+fi
+# force static, no tools
+cd "$S/libinput"; sed -i "s/^lib_libinput = shared_library(/lib_libinput = library(/" meson.build
+ms -Dudev=false -Dlibwacom=false -Ddebug-gui=false -Dtests=false -Dtools=false -Ddocumentation=false
+
+# wld and swc, pinned.
+get() { cd "$S"; [ -d "$1" ] && { cd "$1"; return; }
+        git init -q "$1" && cd "$1" && git fetch -q --depth 1 "https://github.com/michaelforney/$1" "$2" && git checkout -q FETCH_HEAD; }
+# our cflags, dumb drm
+M="PREFIX=$P CC=musl-cc ENABLE_DEBUG=0 ENABLE_SHARED=0 ENABLE_STATIC=1"
+get wld beceef214d3a69f4488fe1ec2674e1016ceb0988
+make -s $M CFLAGS="-Os -fPIC -I$P/kh" ENABLE_DRM=1 ENABLE_PIXMAN=1 ENABLE_WAYLAND=0 DRM_DRIVERS= install >/dev/null
+get swc e4ce1677c1c40af905253a81f025773822f567ea
+make -s $M CFLAGS="-Os -fPIC -I$P/kh" LDFLAGS=-static ENABLE_XWAYLAND=0 ENABLE_LIBUDEV=0 install >/dev/null 2>&1
+touch "$P/.done"

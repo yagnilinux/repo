@@ -1,8 +1,8 @@
 
-  requiem live. nothing is installed yet, and nothing will be
-  until you do it. the plan: https://requiem-linux.codeberg.page/missal.html#installing
+  blackout live. nothing is installed yet, and nothing will be
+  until you do it. the plan: https://yagnilinux.github.io/install.html
 
   everything you need is on this iso, no internet required:
-    /media/install/requiem.tar.gz   the base
-    /media/install/repo                wifi and firmware, for introit
+    /media/install/blackout.tar.gz   the base
+    /media/install/repo             wifi and firmware, for rag
 

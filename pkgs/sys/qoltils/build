@@ -1,3 +1,0 @@
-#!/bin/sh -e
-# requiem's own tools
-for f in mkuser wifi etcnew vol yt; do install -Dm755 "$PKG/files/$f" "$1/usr/bin/$f"; done

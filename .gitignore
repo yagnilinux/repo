@@ -1,9 +1,9 @@
 src/
 repo/
 sources/
-requiem.tar.gz
-requiem.tar.gz.sha256
+blackout.tar.gz
+blackout.tar.gz.sha256
 iso/kbuild/
-requiem.iso
-requiem.iso.sha256
+blackout.iso
+blackout.iso.sha256
 cc/sysroot/

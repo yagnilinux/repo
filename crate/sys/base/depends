@@ -1,0 +1,9 @@
+sys/baselayout
+sys/busybox
+net/curl
+sys/doas
+sys/rag
+sys/linux
+sys/lzfse
+sys/oksh
+sys/s6-linux-init

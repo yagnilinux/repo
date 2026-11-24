@@ -1,0 +1,14 @@
+#!/bin/sh -e
+# amixer, aplay, configs
+"$ROOT/crate/sound/alsa-utils/alsalib"
+A=$ROOT/src/alsa-prefix
+ACLOCAL_PATH=$A/dest$A/share/aclocal autoreconf -fi >/dev/null 2>&1
+CC=musl-cc CFLAGS="-Os -I$A/include -I$A/kh" LDFLAGS="-static -s -L$A/lib" ./configure -q --prefix=/usr \
+    --with-alsa-prefix="$A/lib" --with-alsa-inc-prefix="$A/include" --disable-alsamixer \
+    --disable-alsaconf --disable-alsaloop --disable-bat --disable-nls --disable-xmlto \
+    --disable-rst2man --with-udev-rules-dir=/tmp --with-systemdsystemunitdir=no >/dev/null
+make -s clean >/dev/null 2>&1 || :
+make -s -C amixer >/dev/null; make -s -C aplay >/dev/null
+install -Dm755 amixer/amixer "$1/usr/bin/amixer"
+install -Dm755 aplay/aplay "$1/usr/bin/aplay"
+mkdir -p "$1/usr/share" && cp -r "$A/share/alsa" "$1/usr/share/"

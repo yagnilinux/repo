@@ -1,0 +1,3 @@
+#!/bin/sh
+# getty passes a user name. a live root shell doesn't need one
+exec oksh -l

@@ -1,0 +1,3 @@
+#!/bin/sh
+# blackout's cc. tcc, always static, since there is no loader
+exec tcc -static "$@"

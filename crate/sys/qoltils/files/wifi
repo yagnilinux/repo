@@ -1,0 +1,8 @@
+#!/bin/sh -e
+# save and connect. s6 keeps it up from here
+[ "$2" ] || { echo "usage: wifi network password" >&2; exit 1; }
+ls -d /sys/class/net/wl* >/dev/null 2>&1 || { echo "wifi: no wireless card found" >&2; exit 1; }
+wpa_passphrase "$1" "$2" > /etc/wpa_supplicant.conf
+chmod 600 /etc/wpa_supplicant.conf
+/etc/spark net
+for s in /run/service/wpa-*; do s6-svc -r "$s"; done

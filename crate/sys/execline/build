@@ -1,0 +1,10 @@
+#!/bin/sh -e
+# skarnet's execline, static. libs come from the shared prefix
+"$ROOT/crate/sys/s6/skalibs"
+P=$ROOT/src/skaprefix
+CC=musl-cc ./configure --prefix=/usr --libexecdir=/usr/bin --disable-shared --enable-static-libc \
+    --with-sysdeps="$P/usr/lib/skalibs/sysdeps" --with-include="$P/usr/include" --with-lib="$P/usr/lib" >/dev/null
+make -s -j"$(nproc)" >/dev/null
+make -s DESTDIR="$1" install >/dev/null
+find "$1/usr/bin" -type f -exec "${STRIP:-llvm-strip}" {} +   # skarnet doesn't strip
+rm -rf "$1/usr/include" "$1/usr/lib"

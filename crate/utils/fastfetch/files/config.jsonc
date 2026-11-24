@@ -1,0 +1,12 @@
+{
+  "logo": { "type": "file", "source": "/share/fastfetch/blackout.txt", "color": { "1": "37", "2": "90" }, "padding": { "left": 1, "right": 3 } },
+  "display": { "separator": " ", "color": { "keys": "1;37", "title": "1;37" }, "key": { "width": 8 } },
+  "modules": [
+    "title",
+    { "type": "os",     "key": "os" },
+    { "type": "kernel", "key": "kernel" },
+    { "type": "uptime", "key": "uptime" },
+    { "type": "command", "key": "pkgs", "text": "echo $(ls -d /var/db/rag/installed/*/* | wc -l), $(ls -d /apps/*/ ~/apps/*/ 2>/dev/null | wc -l) apps" },
+    { "type": "memory", "key": "memory", "format": "{used} / {total}" }
+  ]
+}

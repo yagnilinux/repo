@@ -1,0 +1,3 @@
++wifi    wifi network password, for wpa2
++vol     vol 80, sets and unmutes the sound
++yt      yt url, plays audio or downloads with yt-dlp

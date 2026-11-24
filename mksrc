@@ -7,7 +7,7 @@ cd "${0%/*}"
 ROOT=$PWD
 mkdir -p sources/libs
 cd sources
-for d in "$ROOT"/pkgs/*/*/; do
+for d in "$ROOT"/crate/*/*/; do
     n=${d%/} n=${n##*/} v=$(cat "$d/version")
     [ -f "$d/source" ] || continue
     read -r kind a b < "$d/source"

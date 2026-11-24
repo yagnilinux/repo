@@ -1,0 +1,7 @@
+#!/bin/sh
+# super+key runs this
+# copy to ~/.config/barricade/keys
+case $1 in
+p) shot "$HOME/shot-$(date +%Y%m%d-%H%M%S).png" ;; # screenshot
+w) exec ${BROWSER:-netsurf} ;;
+esac

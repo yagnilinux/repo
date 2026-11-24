@@ -1,5 +1,0 @@
-::sysinit:/etc/libera
-tty1::respawn:/bin/getty 38400 tty1
-ttyS0::respawn:/bin/getty -L 115200 ttyS0 vt100
-::ctrlaltdel:/bin/reboot
-::shutdown:/bin/umount -a -r

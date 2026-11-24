@@ -1,5 +1,0 @@
-::sysinit:/etc/libera
-::sysinit:/etc/init.d/live
-tty1::respawn:-/bin/oksh
-ttyS0::respawn:-/bin/oksh
-::ctrlaltdel:/bin/reboot

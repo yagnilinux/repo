@@ -1,0 +1,22 @@
+#!/bin/sh -e
+# static git, https
+# binaries only, no rust (its std unwinds through libgcc_s)
+"$ROOT/crate/desktop/barricade/wlibs"
+P=$ROOT/src/wlprefix C=$ROOT/src/curl B=$ROOT/src/curl-libs
+[ -f "$C/lib/.libs/libcurl.a" ] || { echo "git: build curl first" >&2; exit 1; }
+set -- "$1" CC=musl-cc prefix=/usr bindir=/bin sharedir=/share mandir=/share/man \
+    gitexecdir=/share/git-core template_dir=/share/git-core/templates CFLAGS="-Os -I$P/include" LDFLAGS="-static -s -L$P/lib" \
+    NO_RUST=1 NO_PERL=1 NO_PYTHON=1 NO_TCLTK=1 NO_GETTEXT=1 NO_EXPAT=1 NO_OPENSSL=1 NO_ICONV=1 \
+    FSMONITOR_DAEMON_BACKEND= FSMONITOR_OS_SETTINGS= NO_REGEX=1 NO_INSTALL_HARDLINKS=1 INSTALL_SYMLINKS=1 SKIP_DASHED_BUILT_INS=1 \
+    CURL_CONFIG=false CURL_CFLAGS="-I$C/include" CURL_LDFLAGS="-L$C/lib/.libs -L$B/lib -lcurl -lbearssl"
+d=$1; shift
+make -s -j"$(nproc)" "$@" >/dev/null
+make -s "$@" DESTDIR="$d" install >/dev/null
+cd "$d"
+rm -rf share/gitweb share/git-gui share/gitk share/perl5 share/locale share/bash-completion usr bin/git-cvsserver bin/git-shell bin/scalar
+cd share/git-core
+rm -f git-daemon git-imap-send git-http-backend git-shell git-cvsserver git-http-push scalar git-instaweb \
+    git-send-email git-svn git-p4 git-archimport git-cvsimport git-cvsexportcommit git-request-pull git-quiltimport \
+    git-http-fetch git-filter-branch git-difftool--helper git-mergetool git-mergetool--lib git-web--browse
+rm -rf mergetools
+ln -sfn ../../bin/git git

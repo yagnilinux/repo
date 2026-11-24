@@ -1,0 +1,23 @@
+diff -ruN na/libnsfb/src/cursor.c nb/libnsfb/src/cursor.c
+--- na/libnsfb/src/cursor.c	2026-11-14 18:58:36.234979894 +0200
++++ nb/libnsfb/src/cursor.c	2026-11-14 18:58:36.255817032 +0200
+@@ -83,6 +83,7 @@
+     int sav_size;
+     nsfb_bbox_t sclip; /* saved clipping area */
+ 
++    return true; /* compositor draws it */
+     nsfb->plotter_fns->get_clip(nsfb, &sclip);
+     nsfb->plotter_fns->set_clip(nsfb, NULL);
+ 
+diff -ruN na/libnsfb/src/surface/wld.c nb/libnsfb/src/surface/wld.c
+--- na/libnsfb/src/surface/wld.c	2026-11-14 18:58:36.236938586 +0200
++++ nb/libnsfb/src/surface/wld.c	2026-11-14 18:58:36.257128369 +0200
+@@ -943,7 +943,7 @@
+ 	UNUSED(surface);
+ 	UNUSED(sx_w);
+ 	UNUSED(sy_w);
+-	wl_pointer_set_cursor(pointer, serial, NULL, 0, 0); /* we draw ours */
++	UNUSED(pointer); UNUSED(serial); /* keep barricade cursor */
+ #endif
+ }
+ 
